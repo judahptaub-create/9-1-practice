@@ -1,0 +1,3174 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>K-Nearest Neighbors and Decision Trees for Regression</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/libs/quarto-html/popper.min.js"></script>
+<script src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/libs/bootstrap/bootstrap-917079515d91bccb85b543faf8aa8bb6.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">K-Nearest Neighbors and Decision Trees for Regression</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<hr>
+<p>Title: “You can put a title here; there are many other YAML options but you need to include the following”</p>
+<p>format:</p>
+<p>html:</p>
+<pre><code>embed-resources: true</code></pre>
+<hr>
+<p>Before we implement models using scikit-learn, let’s think conceptually about the <span class="math inline">\(k\)</span>-nearest neighbors and decision tree algorithms for regression.</p>
+<div id="cell-3" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="visualizing-k-nearest-neighbors-regression-functions" class="level2">
+<h2 class="anchored" data-anchor-id="visualizing-k-nearest-neighbors-regression-functions">Visualizing K-Nearest Neighbors Regression Functions</h2>
+<p>A predictive model is simply a function <span class="math inline">\(f\)</span> that maps feature values <span class="math inline">\({\bf x}\)</span> to target values <span class="math inline">\(y\)</span>. We can visualize <span class="math inline">\(f\)</span> when <span class="math inline">\({\bf x}\)</span> consists of just a single feature. We have seen that a linear regression function <span class="math inline">\(f\)</span> based on a single feature <span class="math inline">\(x\)</span> is a linear function of <span class="math inline">\(x\)</span>. What does <span class="math inline">\(f\)</span> look like when the model is a <span class="math inline">\(k\)</span>-nearest neighbors regressor?</p>
+<section id="k-nearest-neighbors-regression-functions-for-a-single-quantitative-feature-wine-data" class="level3">
+<h3 class="anchored" data-anchor-id="k-nearest-neighbors-regression-functions-for-a-single-quantitative-feature-wine-data">K-Nearest Neighbors Regression Functions for a Single Quantitative Feature: Wine Data</h3>
+<p>Recall the wines data set where our target is log(price), a proxy for quality. We’ll use a K-Nearest Neighbors model for predicting log(price) from a single feature, age.</p>
+<p>First, we extract the training data. There is no need to scale the features in this case because there is only one feature. (The point of scaling is to bring all of the <em>feature</em> variables to the same scale before computing distances between observations.)</p>
+<div id="cell-6" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>bordeaux_df <span class="op">=</span> pd.read_csv(<span class="st">"https://dlsun.github.io/pods/data/bordeaux.csv"</span>,</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>                          index_col<span class="op">=</span><span class="st">"year"</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Split the data into training and test sets</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>bordeaux_train <span class="op">=</span> bordeaux_df.loc[:<span class="dv">1980</span>].copy()</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>bordeaux_test <span class="op">=</span> bordeaux_df.loc[<span class="dv">1981</span>:].copy()</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Log transform the target</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>bordeaux_train[<span class="st">"log(price)"</span>] <span class="op">=</span> np.log(bordeaux_train[<span class="st">"price"</span>])</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># train on a single feature, age</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>X_train <span class="op">=</span> bordeaux_train[[<span class="st">"age"</span>]]</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>y_train <span class="op">=</span> bordeaux_train[<span class="st">"log(price)"</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="cell-7" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;colab&quot;,&quot;value&quot;:{&quot;base_uri&quot;:&quot;https://localhost:8080/&quot;,&quot;height&quot;:237}}" data-outputid="b0b915b5-92ff-4484-e0ec-dfc2a47b9d73" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>bordeaux_train[[<span class="st">"age"</span>, <span class="st">"log(price)"</span>]].sort_values(<span class="st">"age"</span>).head(<span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="3">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">age</th>
+<th data-quarto-table-cell-role="th">log(price)</th>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">year</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">1980</th>
+<td>12</td>
+<td>2.639057</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1979</th>
+<td>13</td>
+<td>3.044522</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">1978</th>
+<td>14</td>
+<td>3.295837</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1977</th>
+<td>15</td>
+<td>2.397895</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">1976</th>
+<td>16</td>
+<td>3.218876</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>Let’s make a scatterplot of the training data. Careful! In the reading, we made several scatterplots where both the x-axis and y-axis corresponded to <em>feature</em> variables (and the target corresponded to color). But now the x-axis is the feature and the y-axis is the target.</p>
+<div id="cell-9" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;colab&quot;,&quot;value&quot;:{&quot;base_uri&quot;:&quot;https://localhost:8080/&quot;,&quot;height&quot;:466}}" data-outputid="2be99c14-38fa-4a6e-cbef-6b12f4852906" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>bordeaux_train.plot.scatter(x<span class="op">=</span><span class="st">"age"</span>, y<span class="op">=</span><span class="st">"log(price)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/figure-html/cell-5-output-1.png" width="567" height="432" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<ol type="1">
+<li>Consider a <strong>1-nearest neighbor</strong> regression model. Say we want to add the regression function to the scatterplot. Sketch a plot of what the regression function would look like. <strong>Discuss with your partner before proceeding.</strong> Hint: The smallest ages in the training data are 12, 13, 14, etc. What would the predicted price be for age = 12? age = 13? age = 11.5? age = 12.49? age = 12.51? age = 13.49? age = 13.51?</li>
+</ol>
+<p><strong>Sketch on paper and discuss with your partner.</strong></p>
+<ol start="2" type="1">
+<li>Consider a <strong>2-nearest neighbor</strong> regression model. Say we want to add the regression function to the scatterplot. Sketch a plot of what the regression function would look like. <strong>Discuss with your partner before proceeding.</strong> Hint: The smallest ages in the training data are 12, 13, 14, etc. What would the predicted price be for age = 12? age = 12.99? age = 13.01? age = 13.99? age = 14.01?</li>
+</ol>
+<p><strong>Sketch on paper and discuss with your partner.</strong></p>
+<ol start="3" type="1">
+<li>What would the 27-nearest neighbors regression function look like? <strong>Discuss with your partner before proceeding.</strong> Hint: what is special about 27 in this example?</li>
+</ol>
+<p><strong>Sketch on paper and discuss with your partner.</strong></p>
+<ol start="4" type="1">
+<li>Now we’ll fit a K-nearest neighbors regression model and plot the regression function for K=1, 2, 10, 27. The code below basically implements the code from the previous part for each of the values of K. Run the code and <strong>discuss the output with your partner</strong>. Do the regression functions look like what you expected? What happens as K increases?</li>
+</ol>
+<div id="cell-17" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;colab&quot;,&quot;value&quot;:{&quot;base_uri&quot;:&quot;https://localhost:8080/&quot;,&quot;height&quot;:466}}" data-outputid="4c3718b3-1490-429e-cb46-24c6191bf3e6" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1-nearest neighbor model</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.neighbors <span class="im">import</span> KNeighborsRegressor</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit k-nearest neighbors</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> KNeighborsRegressor(n_neighbors<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>model.fit(X<span class="op">=</span>X_train, y<span class="op">=</span>y_train)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Define a grid of feature values to make predictions for</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>X_new <span class="op">=</span> pd.DataFrame()</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>X_new[<span class="st">"age"</span>] <span class="op">=</span> np.linspace(<span class="dv">10</span>, <span class="dv">45</span>, num<span class="op">=</span><span class="dv">1000</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Make predictions at those feature values.</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>y_new_ <span class="op">=</span> pd.Series(</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ADD YOUR CODE HERE,</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    model.predict(X_new),</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    index<span class="op">=</span>X_new[<span class="st">"age"</span>]</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the scatter plot and the predictions (regression function)</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>bordeaux_train.plot.scatter(x<span class="op">=</span><span class="st">"age"</span>, y<span class="op">=</span><span class="st">"log(price)"</span>)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>y_new_.plot.line(color <span class="op">=</span> <span class="st">"orange"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/figure-html/cell-6-output-1.png" width="567" height="432" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="cell-18" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;colab&quot;,&quot;value&quot;:{&quot;base_uri&quot;:&quot;https://localhost:8080/&quot;,&quot;height&quot;:449}}" data-outputid="77e48e14-d613-4203-d30c-ac338bd4bf90" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># k-nearest neighbors for several values of k</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>ks <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">10</span>, <span class="dv">27</span>]</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [<span class="st">"orange"</span>, <span class="st">"blue"</span>, <span class="st">"green"</span>, <span class="st">"magenta"</span>, <span class="st">"black"</span>]</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>bordeaux_train.plot.scatter(x<span class="op">=</span><span class="st">"age"</span>, y<span class="op">=</span><span class="st">"log(price)"</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Define a grid of feature values.</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>X_new <span class="op">=</span> pd.DataFrame()</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>X_new[<span class="st">"age"</span>] <span class="op">=</span> np.linspace(<span class="dv">10</span>, <span class="dv">45</span>, num<span class="op">=</span><span class="dv">1000</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(ks)):</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Fit k-nearest neighbors</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  model <span class="op">=</span> KNeighborsRegressor(n_neighbors<span class="op">=</span>ks[i])</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  model.fit(X<span class="op">=</span>X_train, y<span class="op">=</span>y_train)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Make predictions at those feature values.</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  y_new_ <span class="op">=</span> pd.Series(</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>      model.predict(X_new),</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>      index<span class="op">=</span>X_new[<span class="st">"age"</span>]</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Plot the predictions.</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>  y_new_.plot.line(color <span class="op">=</span> colors[i])</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>  plt.legend([<span class="st">"values"</span>] <span class="op">+</span> ks)<span class="op">;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/figure-html/cell-7-output-1.png" width="567" height="432" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="k-nearest-neighbors-regression-functions-for-a-single-categorical-feature-housing-data" class="level3">
+<h3 class="anchored" data-anchor-id="k-nearest-neighbors-regression-functions-for-a-single-categorical-feature-housing-data">K-Nearest Neighbors Regression Functions for a Single Categorical Feature: Housing Data</h3>
+<p>Recall the Ames housing data set. We’ll use a single categorical feature—Neighborhood—to predict SalePrice.</p>
+<div id="cell-20" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;colab&quot;,&quot;value&quot;:{&quot;base_uri&quot;:&quot;https://localhost:8080/&quot;,&quot;height&quot;:424}}" data-outputid="d803cee1-c4b4-4723-f84d-78bf93f47188" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>df_ames <span class="op">=</span> pd.read_csv(<span class="st">"http://dlsun.github.io/pods/data/AmesHousing.txt"</span>, sep <span class="op">=</span> <span class="st">"</span><span class="ch">\t</span><span class="st">"</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>df_ames[[<span class="st">"Neighborhood"</span>, <span class="st">"SalePrice"</span>]]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="7">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Neighborhood</th>
+<th data-quarto-table-cell-role="th">SalePrice</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>NAmes</td>
+<td>215000</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>NAmes</td>
+<td>105000</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>NAmes</td>
+<td>172000</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">3</th>
+<td>NAmes</td>
+<td>244000</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">4</th>
+<td>Gilbert</td>
+<td>189900</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">...</th>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2925</th>
+<td>Mitchel</td>
+<td>142500</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">2926</th>
+<td>Mitchel</td>
+<td>131000</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2927</th>
+<td>Mitchel</td>
+<td>132000</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">2928</th>
+<td>Mitchel</td>
+<td>170000</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2929</th>
+<td>Mitchel</td>
+<td>188000</td>
+</tr>
+</tbody>
+</table>
+
+<p>2930 rows × 2 columns</p>
+</div>
+</div>
+</div>
+<p>We’ll fit a <strong>10-nearest neighbors</strong> regression model to predict house price using <strong>Neighborhood</strong> as the only feature. Since Neighborhood is categorical we first need to convert it to dummies, using a <code>ColumnTransformer</code> and a <code>Pipeline</code>.</p>
+<div id="cell-22" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;colab&quot;,&quot;value&quot;:{&quot;base_uri&quot;:&quot;https://localhost:8080/&quot;,&quot;height&quot;:269}}" data-outputid="162dc946-86cb-4c51-920a-367c0f7787d3" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.compose <span class="im">import</span> ColumnTransformer</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.neighbors <span class="im">import</span> KNeighborsRegressor</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.pipeline <span class="im">import</span> Pipeline</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> OneHotEncoder</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> df_ames[[<span class="st">"Neighborhood"</span>]]</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df_ames[<span class="st">"SalePrice"</span>]</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>ct <span class="op">=</span> ColumnTransformer(</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    [(<span class="st">"dummify"</span>, OneHotEncoder(), [<span class="st">"Neighborhood"</span>])]</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>knn_model <span class="op">=</span> Pipeline([</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"preprocessing"</span>, ct),</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"knn"</span>, KNeighborsRegressor(n_neighbors<span class="op">=</span><span class="dv">10</span>))</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>knn_model.fit(X, y)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="8">
+<style>.sk-global {
+  /* Definition of color scheme common for light and dark mode */
+  --sklearn-color-text: #000;
+  --sklearn-color-text-muted: #666;
+  --sklearn-color-line: gray;
+  /* Definition of color scheme for unfitted estimators */
+  --sklearn-color-unfitted-level-0: #fff5e6;
+  --sklearn-color-unfitted-level-1: #f6e4d2;
+  --sklearn-color-unfitted-level-2: #ffe0b3;
+  --sklearn-color-unfitted-level-3: chocolate;
+  /* Definition of color scheme for fitted estimators */
+  --sklearn-color-fitted-level-0: #f0f8ff;
+  --sklearn-color-fitted-level-1: #d4ebff;
+  --sklearn-color-fitted-level-2: #b3dbfd;
+  --sklearn-color-fitted-level-3: cornflowerblue;
+}
+
+.sk-global.light {
+  /* Specific color for light theme */
+  --sklearn-color-text-on-default-background: black;
+  --sklearn-color-background: white;
+  --sklearn-color-border-box: black;
+  --sklearn-color-icon: #696969;
+}
+
+.sk-global.dark {
+  --sklearn-color-text-on-default-background: white;
+  --sklearn-color-background: #111;
+  --sklearn-color-border-box: white;
+  --sklearn-color-icon: #878787;
+}
+
+.sk-global {
+  color: var(--sklearn-color-text);
+}
+
+.sk-global pre {
+  padding: 0;
+}
+
+.sk-global input.sk-hidden--visually {
+  border: 0;
+  clip-path: inset(100%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.sk-global div.sk-dashed-wrapped {
+  border: 1px dashed var(--sklearn-color-line);
+  margin: 0 0.4em 0.5em 0.4em;
+  box-sizing: border-box;
+  padding-bottom: 0.4em;
+  background-color: var(--sklearn-color-background);
+}
+
+.sk-global div.sk-container {
+  /* jupyter's `normalize.less` sets `[hidden] { display: none; }`
+     but bootstrap.min.css set `[hidden] { display: none !important; }`
+     so we also need the `!important` here to be able to override the
+     default hidden behavior on the sphinx rendered scikit-learn.org.
+     See: https://github.com/scikit-learn/scikit-learn/issues/21755 */
+  display: inline-block !important;
+  position: relative;
+}
+
+.sk-global div.sk-text-repr-fallback {
+  display: none;
+}
+
+div.sk-parallel-item,
+div.sk-serial,
+div.sk-item {
+  /* draw centered vertical line to link estimators */
+  background-image: linear-gradient(var(--sklearn-color-text-on-default-background), var(--sklearn-color-text-on-default-background));
+  background-size: 2px 100%;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+
+/* Parallel-specific style estimator block */
+
+.sk-global div.sk-parallel-item::after {
+  content: "";
+  width: 100%;
+  border-bottom: 2px solid var(--sklearn-color-text-on-default-background);
+  flex-grow: 1;
+}
+
+.sk-global div.sk-parallel {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background-color: var(--sklearn-color-background);
+  position: relative;
+}
+
+.sk-global div.sk-parallel-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.sk-global div.sk-parallel-item:first-child::after {
+  align-self: flex-end;
+  width: 50%;
+}
+
+.sk-global div.sk-parallel-item:last-child::after {
+  align-self: flex-start;
+  width: 50%;
+}
+
+.sk-global div.sk-parallel-item:only-child::after {
+  width: 0;
+}
+
+/* Serial-specific style estimator block */
+
+.sk-global div.sk-serial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--sklearn-color-background);
+  padding-right: 1em;
+  padding-left: 1em;
+}
+
+
+/* Toggleable style: style used for estimator/Pipeline/ColumnTransformer box that is
+clickable and can be expanded/collapsed.
+- Pipeline and ColumnTransformer use this feature and define the default style
+- Estimators will overwrite some part of the style using the `sk-estimator` class
+*/
+
+/* Pipeline and ColumnTransformer style (default) */
+
+.sk-global div.sk-toggleable {
+  /* Default theme specific background. It is overwritten whether we have a
+  specific estimator or a Pipeline/ColumnTransformer */
+  background-color: var(--sklearn-color-background);
+}
+
+/* Toggleable label */
+.sk-global label.sk-toggleable__label {
+  cursor: pointer;
+  display: flex;
+  width: 100%;
+  margin-bottom: 0;
+  padding: 0.5em;
+  box-sizing: border-box;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+}
+
+.sk-global label.sk-toggleable__label .caption {
+  font-size: 0.6rem;
+  font-weight: lighter;
+  color: var(--sklearn-color-text-muted);
+}
+
+.sk-global label.sk-toggleable__label-arrow:before {
+  /* Arrow on the left of the label */
+  content: "▸";
+  float: left;
+  margin-right: 0.25em;
+  color: var(--sklearn-color-icon);
+}
+
+.sk-global label.sk-toggleable__label-arrow:hover:before {
+  color: var(--sklearn-color-text);
+}
+
+/* Toggleable content - dropdown */
+
+.sk-global div.sk-toggleable__content {
+  display: none;
+  text-align: left;
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-0);
+}
+
+.sk-global div.sk-toggleable__content.fitted {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-0);
+}
+
+.sk-global div.sk-toggleable__content pre {
+  margin: 0.2em;
+  border-radius: 0.25em;
+  color: var(--sklearn-color-text);
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-0);
+}
+
+.sk-global div.sk-toggleable__content.fitted pre {
+  /* unfitted */
+  background-color: var(--sklearn-color-fitted-level-0);
+}
+
+.sk-global input.sk-toggleable__control:checked~div.sk-toggleable__content {
+  /* Expand drop-down */
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.sk-global input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {
+  content: "▾";
+}
+
+/* Pipeline/ColumnTransformer-specific style */
+
+.sk-global div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {
+  color: var(--sklearn-color-text);
+  background-color: var(--sklearn-color-unfitted-level-2);
+}
+
+.sk-global div.sk-label.fitted input.sk-toggleable__control:checked~label.sk-toggleable__label {
+  background-color: var(--sklearn-color-fitted-level-2);
+}
+
+/* Estimator-specific style */
+
+/* Colorize estimator box */
+.sk-global div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-2);
+}
+
+.sk-global div.sk-estimator.fitted input.sk-toggleable__control:checked~label.sk-toggleable__label {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-2);
+}
+
+.sk-global div.sk-label label.sk-toggleable__label,
+.sk-global div.sk-label label {
+  /* The background is the default theme color */
+  color: var(--sklearn-color-text-on-default-background);
+}
+
+/* On hover, darken the color of the background */
+.sk-global div.sk-label:hover label.sk-toggleable__label {
+  color: var(--sklearn-color-text);
+  background-color: var(--sklearn-color-unfitted-level-2);
+}
+
+/* Label box, darken color on hover, fitted */
+.sk-global div.sk-label.fitted:hover label.sk-toggleable__label.fitted {
+  color: var(--sklearn-color-text);
+  background-color: var(--sklearn-color-fitted-level-2);
+}
+
+/* Estimator label */
+
+.sk-global div.sk-label label {
+  font-family: monospace;
+  font-weight: bold;
+  line-height: 1.2em;
+}
+
+.sk-global div.sk-label-container {
+  text-align: center;
+}
+
+/* Estimator-specific */
+.sk-global div.sk-estimator {
+  font-family: monospace;
+  border: 1px dotted var(--sklearn-color-border-box);
+  border-radius: 0.25em;
+  box-sizing: border-box;
+  margin-bottom: 0.5em;
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-0);
+}
+
+.sk-global div.sk-estimator.fitted {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-0);
+}
+
+/* on hover */
+.sk-global div.sk-estimator:hover {
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-2);
+}
+
+.sk-global div.sk-estimator.fitted:hover {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-2);
+}
+
+/* Specification for estimator info (e.g. "i" and "?") */
+
+/* Common style for "i" and "?" */
+
+.sk-estimator-doc-link,
+a:link.sk-estimator-doc-link,
+a:visited.sk-estimator-doc-link {
+  float: right;
+  font-size: smaller;
+  line-height: 1em;
+  font-family: monospace;
+  background-color: var(--sklearn-color-unfitted-level-0);
+  border-radius: 1em;
+  height: 1em;
+  width: 1em;
+  text-decoration: none !important;
+  margin-left: 0.5em;
+  text-align: center;
+  /* unfitted */
+  border: var(--sklearn-color-unfitted-level-3) 1pt solid;
+  color: var(--sklearn-color-unfitted-level-3);
+}
+
+.sk-estimator-doc-link.fitted,
+a:link.sk-estimator-doc-link.fitted,
+a:visited.sk-estimator-doc-link.fitted {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-0);
+  border: var(--sklearn-color-fitted-level-3) 1pt solid;
+  color: var(--sklearn-color-fitted-level-3);
+}
+
+/* On hover */
+div.sk-estimator:hover .sk-estimator-doc-link:hover,
+.sk-estimator-doc-link:hover,
+div.sk-label-container:hover .sk-estimator-doc-link:hover,
+.sk-estimator-doc-link:hover {
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-3);
+  border: var(--sklearn-color-fitted-level-0) 1pt solid;
+  color: var(--sklearn-color-unfitted-level-0);
+  text-decoration: none;
+}
+
+div.sk-estimator.fitted:hover .sk-estimator-doc-link.fitted:hover,
+.sk-estimator-doc-link.fitted:hover,
+div.sk-label-container:hover .sk-estimator-doc-link.fitted:hover,
+.sk-estimator-doc-link.fitted:hover {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-3);
+  border: var(--sklearn-color-fitted-level-0) 1pt solid;
+  color: var(--sklearn-color-fitted-level-0);
+  text-decoration: none;
+}
+
+/* Span, style for the box shown on hovering the info icon */
+.sk-estimator-doc-link span {
+  display: none;
+  z-index: 9999;
+  position: relative;
+  font-weight: normal;
+  right: .2ex;
+  padding: .5ex;
+  margin: .5ex;
+  width: min-content;
+  min-width: 20ex;
+  max-width: 50ex;
+  color: var(--sklearn-color-text);
+  box-shadow: 2pt 2pt 4pt #999;
+  /* unfitted */
+  background: var(--sklearn-color-unfitted-level-0);
+  border: .5pt solid var(--sklearn-color-unfitted-level-3);
+}
+
+.sk-estimator-doc-link.fitted span {
+  /* fitted */
+  background: var(--sklearn-color-fitted-level-0);
+  border: var(--sklearn-color-fitted-level-3);
+}
+
+.sk-estimator-doc-link:hover span {
+  display: block;
+}
+
+/* "?"-specific style due to the `<a>` HTML tag */
+
+.sk-global a.estimator_doc_link {
+  float: right;
+  font-size: 1rem;
+  line-height: 1em;
+  font-family: monospace;
+  background-color: var(--sklearn-color-unfitted-level-0);
+  border-radius: 1rem;
+  height: 1rem;
+  width: 1rem;
+  text-decoration: none;
+  /* unfitted */
+  color: var(--sklearn-color-unfitted-level-1);
+  border: var(--sklearn-color-unfitted-level-1) 1pt solid;
+}
+
+.sk-global a.estimator_doc_link.fitted {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-0);
+  border: var(--sklearn-color-fitted-level-1) 1pt solid;
+  color: var(--sklearn-color-fitted-level-1);
+}
+
+/* On hover */
+.sk-global a.estimator_doc_link:hover {
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-3);
+  color: var(--sklearn-color-background);
+  text-decoration: none;
+}
+
+.sk-global a.estimator_doc_link.fitted:hover {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-3);
+}
+
+.sk-top-container.sk-global {
+  /* pydata-sphinx-theme hides overflow, so scrolling is disabled.
+   We need to set it to !important and add tabindex="0" in the HTML
+   to allow keyboard-only users to navigate the display. */
+  overflow-x: scroll !important;
+  max-width: 100%;
+}
+
+.estimator-table {
+    font-family: monospace;
+}
+
+.estimator-table summary {
+    padding: .5rem;
+    cursor: pointer;
+}
+
+.estimator-table summary::marker {
+    font-size: 0.7rem;
+}
+
+.estimator-table details[open] {
+    padding-left: 0.1rem;
+    padding-right: 0.1rem;
+    padding-bottom: 0.3rem;
+}
+
+.estimator-table .parameters-table {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-top: 0;
+}
+
+.estimator-table .parameters-table tr:nth-child(odd) {
+    background-color: #fff;
+}
+
+.estimator-table .parameters-table tr:nth-child(even) {
+    background-color: #f6f6f6;
+}
+
+.estimator-table .parameters-table tr:hover td {
+    background-color: #e0e0e0;
+}
+
+.estimator-table table :is(td, th) {
+    border: 1px solid rgba(106, 105, 104, 0.232);
+}
+
+/*
+    `table td`is set in notebook with right text-align.
+    We need to overwrite it.
+*/
+.estimator-table table td.param {
+    text-align: left;
+    position: relative;
+    padding: 0;
+}
+
+.user-set td {
+    color:rgb(255, 94, 0);
+    text-align: left !important;
+}
+
+.user-set td.value {
+    color:rgb(255, 94, 0);
+    background-color: transparent;
+}
+
+.default td, .estimator-table th {
+    color: black;
+    text-align: left !important;
+}
+
+.user-set td i,
+.default td i {
+    color: black;
+}
+
+td.fitted-att-type {
+    white-space: preserve nowrap;
+}
+
+/*
+    Styles for parameter documentation links
+    We need styling for visited so jupyter doesn't overwrite it
+*/
+a.param-doc-link,
+a.param-doc-link:link,
+a.param-doc-link:visited {
+    text-decoration: underline dashed;
+    text-underline-offset: .3em;
+    color: inherit;
+    display: block;
+    padding: .5em;
+}
+
+@supports(anchor-name: --doc-link) {
+    a.param-doc-link,
+    a.param-doc-link:link,
+    a.param-doc-link:visited {
+    anchor-name: --doc-link;
+    }
+}
+
+/* "hack" to make the entire area of the cell containing the link clickable */
+a.param-doc-link::before {
+    position: absolute;
+    content: "";
+    inset: 0;
+}
+
+.param-doc-description {
+    display: none;
+    position: absolute;
+    z-index: 9999;
+    left: 0;
+    padding: .5ex;
+    margin-left: 1.5em;
+    color: var(--sklearn-color-text);
+    box-shadow: .3em .3em .4em #999;
+    width: max-content;
+    text-align: left;
+    max-height: 10em;
+    overflow-y: auto;
+
+    /* unfitted */
+    background: var(--sklearn-color-unfitted-level-0);
+    border: thin solid var(--sklearn-color-unfitted-level-3);
+}
+
+@supports(position-area: center right) {
+    .param-doc-description {
+    position-area: center right;
+    position: fixed;
+    margin-left: 0;
+    }
+}
+
+/* Fitted state for parameter tooltips */
+.fitted .param-doc-description {
+    /* fitted */
+    background: var(--sklearn-color-fitted-level-0);
+    border: thin solid var(--sklearn-color-fitted-level-3);
+}
+
+.param-doc-link:hover .param-doc-description {
+    display: block;
+}
+
+.copy-paste-icon {
+    background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NDggNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNy4yIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjUgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZD0iTTIwOCAwTDMzMi4xIDBjMTIuNyAwIDI0LjkgNS4xIDMzLjkgMTQuMWw2Ny45IDY3LjljOSA5IDE0LjEgMjEuMiAxNC4xIDMzLjlMNDQ4IDMzNmMwIDI2LjUtMjEuNSA0OC00OCA0OGwtMTkyIDBjLTI2LjUgMC00OC0yMS41LTQ4LTQ4bDAtMjg4YzAtMjYuNSAyMS41LTQ4IDQ4LTQ4ek00OCAxMjhsODAgMCAwIDY0LTY0IDAgMCAyNTYgMTkyIDAgMC0zMiA2NCAwIDAgNDhjMCAyNi41LTIxLjUgNDgtNDggNDhMNDggNTEyYy0yNi41IDAtNDgtMjEuNS00OC00OEwwIDE3NmMwLTI2LjUgMjEuNS00OCA0OC00OHoiLz48L3N2Zz4=);
+    background-repeat: no-repeat;
+    background-size: 14px 14px;
+    background-position: 0;
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+.features {
+  font-family: monospace;
+  cursor: pointer;
+  background-color: var(--sklearn-color-unfitted-level-0);
+  border: 1px dotted var(--sklearn-color-border-box);
+  border-radius: .20em;
+  margin-bottom: 0.5em;
+  font-size: inherit; /* Needed for jupyter */
+}
+
+.features.fitted {
+  background-color: var(--sklearn-color-fitted-level-0);
+}
+
+.features summary {
+  cursor: pointer;
+  display: flex;
+  margin-bottom: 0;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: .25em;
+}
+
+.features details[open] > summary {
+  color: var(--sklearn-color-text);
+  background-color: var(--sklearn-color-unfitted-level-2);
+  border-radius: .20em 0 0 0;
+}
+
+.features.fitted details[open] > summary {
+  background-color: var(--sklearn-color-fitted-level-2);
+  border-radius: .20em 0 0 0;
+}
+
+.features details > summary .arrow::before {
+  content: "▸";
+  color: grey;
+}
+
+.features details[open] > summary .arrow::before {
+  content: "▾";
+}
+
+.features details:hover > summary {
+  margin: 0;
+  background-color: var(--sklearn-color-unfitted-level-2);
+}
+
+.features.fitted details:hover > summary {
+  margin: 0;
+  background-color: var(--sklearn-color-fitted-level-2);
+}
+
+.features .features-container {
+  max-width: 15em;
+  max-height: 10em;
+  overflow: auto;
+  scrollbar-width: thin;
+  padding: .25em 0.1rem;
+  background-color: var(--sklearn-color-unfitted-level-0);
+  border-radius: 0 0 .5em .5em;
+}
+
+.features.fitted .features-container {
+  background-color: var(--sklearn-color-fitted-level-0);
+}
+
+.features .image-container {
+  block-size: 1em;
+  inline-size: 1em;
+  padding: 0;
+  margin: 0%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.features .copy-paste-icon {
+  background-size: 1em 1em;
+  width: 1em;
+  height: 1em;
+  filter: grayscale(100%) opacity(60%);
+}
+
+.features .features-container table {
+  width: 100%;
+  margin: 0.01em;
+}
+
+.features .features-container table tr:nth-child(odd) {
+  background-color: #fff;
+}
+
+.features .features-container table tr:nth-child(even) {
+  background-color: #f6f6f6;
+}
+
+.features .features-container table tr:hover {
+  background-color: #e0e0e0;
+}
+
+.features .features-container table {
+  table-layout: inherit;
+}
+
+.features .features-container table td {
+  text-align: left;
+  padding: 0 0.5em;
+  border: 1px solid rgba(106, 105, 104, 0.232);
+  white-space: nowrap;
+  color: var(--sklearn-color-text);
+}
+
+.total_features {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5em;
+}
+</style><div id="sk-container-id-1" tabindex="0" class="sk-top-container sk-global"><div class="sk-text-repr-fallback"><pre>Pipeline(steps=[('preprocessing',
+                 ColumnTransformer(transformers=[('dummify', OneHotEncoder(),
+                                                  ['Neighborhood'])])),
+                ('knn', KNeighborsRegressor(n_neighbors=10))])</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br>On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class="sk-container" hidden=""><div class="sk-item sk-dashed-wrapped"><div class="sk-label-container"><div class="sk-label fitted sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually sk-global" id="sk-estimator-id-1" type="checkbox"><label for="sk-estimator-id-1" class="sk-toggleable__label fitted sk-toggleable__label-arrow"><div><div>Pipeline</div></div><div><a class="sk-estimator-doc-link fitted" rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.pipeline.Pipeline.html">?<span>Documentation for Pipeline</span></a><span class="sk-estimator-doc-link fitted">i<span>Fitted</span></span></div></label><div class="sk-toggleable__content fitted" data-param-prefix="">
+        <div class="estimator-table">
+            <details>
+                <summary>Parameters</summary>
+                
+<table class="parameters-table caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="user-set odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.pipeline.Pipeline.html#:~:text=steps,-list%20of%20tuples" class="param-doc-link" style="anchor-name: --doc-link-steps;" rel="noreferrer" target="_blank">steps <span class="param-doc-description" style="position-anchor: --doc-link-steps;"> steps: list of tuples<br>
+<br>
+List of (name of step, estimator) tuples that are to be chained in<br>
+sequential order. To be compatible with the scikit-learn API, all steps<br>
+must define `fit`. All non-last steps must also define `transform`. See<br>
+:ref:`Combining Estimators &lt;combining_estimators&gt;` for more details.</span></a></td>
+<td class="value">[('preprocessing', ...), ('knn', ...)]</td>
+</tr>
+<tr class="default even">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.pipeline.Pipeline.html#:~:text=transform_input,-list%20of%20str%2C%20default%3DNone" class="param-doc-link" style="anchor-name: --doc-link-transform_input;" rel="noreferrer" target="_blank">transform_input <span class="param-doc-description" style="position-anchor: --doc-link-transform_input;"> transform_input: list of str, default=None<br>
+<br>
+The names of the :term:`metadata` parameters that should be transformed by the<br>
+pipeline before passing it to the step consuming it.<br>
+<br>
+This enables transforming some input arguments to ``fit`` (other than ``X``)<br>
+to be transformed by the steps of the pipeline up to the step which requires<br>
+them. Requirement is defined via :ref:`metadata routing &lt;metadata_routing&gt;`.<br>
+For instance, this can be used to pass a validation set through the pipeline.<br>
+<br>
+You can only set this if metadata routing is enabled, which you<br>
+can enable using ``sklearn.set_config(enable_metadata_routing=True)``.<br>
+<br>
+.. versionadded:: 1.6</span></a></td>
+<td class="value">None</td>
+</tr>
+<tr class="default odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.pipeline.Pipeline.html#:~:text=memory,-str%20or%20object%20with%20the%20joblib.Memory%20interface%2C%20default%3DNone" class="param-doc-link" style="anchor-name: --doc-link-memory;" rel="noreferrer" target="_blank">memory <span class="param-doc-description" style="position-anchor: --doc-link-memory;"> memory: str or object with the joblib.Memory interface, default=None<br>
+<br>
+Used to cache the fitted transformers of the pipeline. The last step<br>
+will never be cached, even if it is a transformer. By default, no<br>
+caching is performed. If a string is given, it is the path to the<br>
+caching directory. Enabling caching triggers a clone of the transformers<br>
+before fitting. Therefore, the transformer instance given to the<br>
+pipeline cannot be inspected directly. Use the attribute ``named_steps``<br>
+or ``steps`` to inspect estimators within the pipeline. Caching the<br>
+transformers is advantageous when fitting is time consuming. See<br>
+:ref:`sphx_glr_auto_examples_neighbors_plot_caching_nearest_neighbors.py`<br>
+for an example on how to enable caching.</span></a></td>
+<td class="value">None</td>
+</tr>
+<tr class="default even">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.pipeline.Pipeline.html#:~:text=verbose,-bool%2C%20default%3DFalse" class="param-doc-link" style="anchor-name: --doc-link-verbose;" rel="noreferrer" target="_blank">verbose <span class="param-doc-description" style="position-anchor: --doc-link-verbose;"> verbose: bool, default=False<br>
+<br>
+If True, the time elapsed while fitting each step will be printed as it<br>
+is completed.</span></a></td>
+<td class="value">False</td>
+</tr>
+</tbody>
+</table>
+
+            </details>
+        </div>
+    
+        <div class="estimator-table">
+            <details>
+                <summary>Fitted attributes</summary>
+                
+<table class="parameters-table caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">Type</th>
+<th data-quarto-table-cell-role="th">Value</th>
+</tr>
+<tr class="default even">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.pipeline.Pipeline.html#:~:text=feature_names_in_,-ndarray%20of%20shape%20%28n_features_in_%2C%29" class="param-doc-link" style="anchor-name: --doc-link-feature_names_in_;" rel="noreferrer" target="_blank">feature_names_in_ <span class="param-doc-description" style="position-anchor: --doc-link-feature_names_in_;"> feature_names_in_: ndarray of shape (`n_features_in_`,)<br>
+<br>
+Names of features seen during :term:`fit`. Only defined if the<br>
+underlying estimator exposes such an attribute when fit.<br>
+<br>
+.. versionadded:: 1.0</span></a></td>
+<td class="fitted-att-type">ndarray[object](1,)</td>
+<td>['Neighborhood']</td>
+</tr>
+<tr class="default odd">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.pipeline.Pipeline.html#:~:text=n_features_in_,-int" class="param-doc-link" style="anchor-name: --doc-link-n_features_in_;" rel="noreferrer" target="_blank">n_features_in_ <span class="param-doc-description" style="position-anchor: --doc-link-n_features_in_;"> n_features_in_: int<br>
+<br>
+Number of features seen during :term:`fit`. Only defined if the<br>
+underlying first estimator in `steps` exposes such an attribute<br>
+when fit.<br>
+<br>
+.. versionadded:: 0.24</span></a></td>
+<td class="fitted-att-type">int</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+
+            </details>
+        </div>
+    </div></div></div><div class="sk-serial"><div class="sk-item sk-dashed-wrapped"><div class="sk-label-container"><div class="sk-label fitted sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually sk-global" id="sk-estimator-id-2" type="checkbox"><label for="sk-estimator-id-2" class="sk-toggleable__label fitted sk-toggleable__label-arrow"><div><div>preprocessing: ColumnTransformer</div></div><div><a class="sk-estimator-doc-link fitted" rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html">?<span>Documentation for preprocessing: ColumnTransformer</span></a></div></label><div class="sk-toggleable__content fitted" data-param-prefix="preprocessing__">
+        <div class="estimator-table">
+            <details>
+                <summary>Parameters</summary>
+                
+<table class="parameters-table caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="user-set odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html#:~:text=transformers,-list%20of%20tuples" class="param-doc-link" style="anchor-name: --doc-link-transformers;" rel="noreferrer" target="_blank">transformers <span class="param-doc-description" style="position-anchor: --doc-link-transformers;"> transformers: list of tuples<br>
+<br>
+List of (name, transformer, columns) tuples specifying the<br>
+transformer objects to be applied to subsets of the data.<br>
+<br>
+name : str<br>
+Like in Pipeline and FeatureUnion, this allows the transformer and<br>
+its parameters to be set using ``set_params`` and searched in grid<br>
+search.<br>
+transformer : {'drop', 'passthrough'} or estimator<br>
+Estimator must support :term:`fit` and :term:`transform`.<br>
+Special-cased strings 'drop' and 'passthrough' are accepted as<br>
+well, to indicate to drop the columns or to pass them through<br>
+untransformed, respectively.<br>
+columns : str, array-like of str, int, array-like of int, array-like of bool, slice or callable<br>
+Indexes the data on its second axis. Integers are interpreted as<br>
+positional columns, while strings can reference DataFrame columns<br>
+by name. A scalar string or int should be used where<br>
+``transformer`` expects X to be a 1d array-like (vector),<br>
+otherwise a 2d array will be passed to the transformer.<br>
+A callable is passed the input data `X` and can return any of the<br>
+above. To select multiple columns by name or dtype, you can use<br>
+:obj:`make_column_selector`.</span></a></td>
+<td class="value">[('dummify', ...)]</td>
+</tr>
+<tr class="default even">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html#:~:text=remainder,-%7B%27drop%27%2C%20%27passthrough%27%7D%20or%20estimator%2C%20default%3D%27drop%27" class="param-doc-link" style="anchor-name: --doc-link-remainder;" rel="noreferrer" target="_blank">remainder <span class="param-doc-description" style="position-anchor: --doc-link-remainder;"> remainder: {'drop', 'passthrough'} or estimator, default='drop'<br>
+<br>
+By default, only the specified columns in `transformers` are<br>
+transformed and combined in the output, and the non-specified<br>
+columns are dropped. (default of ``'drop'``).<br>
+By specifying ``remainder='passthrough'``, all remaining columns that<br>
+were not specified in `transformers`, but present in the data passed<br>
+to `fit` will be automatically passed through. This subset of columns<br>
+is concatenated with the output of the transformers. For dataframes,<br>
+extra columns not seen during `fit` will be excluded from the output<br>
+of `transform`.<br>
+By setting ``remainder`` to be an estimator, the remaining<br>
+non-specified columns will use the ``remainder`` estimator. The<br>
+estimator must support :term:`fit` and :term:`transform`.<br>
+Note that using this feature requires that the DataFrame columns<br>
+input at :term:`fit` and :term:`transform` have identical order.</span></a></td>
+<td class="value">'drop'</td>
+</tr>
+<tr class="default odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html#:~:text=sparse_threshold,-float%2C%20default%3D0.3" class="param-doc-link" style="anchor-name: --doc-link-sparse_threshold;" rel="noreferrer" target="_blank">sparse_threshold <span class="param-doc-description" style="position-anchor: --doc-link-sparse_threshold;"> sparse_threshold: float, default=0.3<br>
+<br>
+If the output of the different transformers contains sparse matrices,<br>
+these will be stacked as a sparse matrix if the overall density is<br>
+lower than this value. Use ``sparse_threshold=0`` to always return<br>
+dense. When the transformed output consists of all dense data, the<br>
+stacked result will be dense, and this keyword will be ignored.</span></a></td>
+<td class="value">0.3</td>
+</tr>
+<tr class="default even">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html#:~:text=n_jobs,-int%2C%20default%3DNone" class="param-doc-link" style="anchor-name: --doc-link-n_jobs;" rel="noreferrer" target="_blank">n_jobs <span class="param-doc-description" style="position-anchor: --doc-link-n_jobs;"> n_jobs: int, default=None<br>
+<br>
+Number of jobs to run in parallel.<br>
+``None`` means 1 unless in a :obj:`joblib.parallel_backend` context.<br>
+``-1`` means using all processors. See :term:`Glossary &lt;n_jobs&gt;`<br>
+for more details.</span></a></td>
+<td class="value">None</td>
+</tr>
+<tr class="default odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html#:~:text=transformer_weights,-dict%2C%20default%3DNone" class="param-doc-link" style="anchor-name: --doc-link-transformer_weights;" rel="noreferrer" target="_blank">transformer_weights <span class="param-doc-description" style="position-anchor: --doc-link-transformer_weights;"> transformer_weights: dict, default=None<br>
+<br>
+Multiplicative weights for features per transformer. The output of the<br>
+transformer is multiplied by these weights. Keys are transformer names,<br>
+values the weights.</span></a></td>
+<td class="value">None</td>
+</tr>
+<tr class="default even">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html#:~:text=verbose,-bool%2C%20default%3DFalse" class="param-doc-link" style="anchor-name: --doc-link-verbose;" rel="noreferrer" target="_blank">verbose <span class="param-doc-description" style="position-anchor: --doc-link-verbose;"> verbose: bool, default=False<br>
+<br>
+If True, the time elapsed while fitting each transformer will be<br>
+printed as it is completed.</span></a></td>
+<td class="value">False</td>
+</tr>
+<tr class="default odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html#:~:text=verbose_feature_names_out,-bool%2C%20str%20or%20Callable%5B%5Bstr%2C%20str%5D%2C%20str%5D%2C%20default%3DTrue" class="param-doc-link" style="anchor-name: --doc-link-verbose_feature_names_out;" rel="noreferrer" target="_blank">verbose_feature_names_out <span class="param-doc-description" style="position-anchor: --doc-link-verbose_feature_names_out;"> verbose_feature_names_out: bool, str or Callable[[str, str], str], default=True<br>
+<br>
+- If True, :meth:`ColumnTransformer.get_feature_names_out` will prefix<br>
+all feature names with the name of the transformer that generated that<br>
+feature. It is equivalent to setting<br>
+`verbose_feature_names_out="{transformer_name}__{feature_name}"`.<br>
+- If False, :meth:`ColumnTransformer.get_feature_names_out` will not<br>
+prefix any feature names and will error if feature names are not<br>
+unique.<br>
+- If ``Callable[[str, str], str]``,<br>
+:meth:`ColumnTransformer.get_feature_names_out` will rename all the features<br>
+using the name of the transformer. The first argument of the callable is the<br>
+transformer name and the second argument is the feature name. The returned<br>
+string will be the new feature name.<br>
+- If ``str``, it must be a string ready for formatting. The given string will<br>
+be formatted using two field names: ``transformer_name`` and ``feature_name``.<br>
+e.g. ``"{feature_name}__{transformer_name}"``. See :meth:`str.format` method<br>
+from the standard library for more info.<br>
+<br>
+.. versionadded:: 1.0<br>
+<br>
+.. versionchanged:: 1.6<br>
+`verbose_feature_names_out` can be a callable or a string to be formatted.</span></a></td>
+<td class="value">True</td>
+</tr>
+</tbody>
+</table>
+
+            </details>
+        </div>
+    
+        <div class="estimator-table">
+            <details>
+                <summary>Fitted attributes</summary>
+                
+<table class="parameters-table caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">Type</th>
+<th data-quarto-table-cell-role="th">Value</th>
+</tr>
+<tr class="default even">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html#:~:text=feature_names_in_,-ndarray%20of%20shape%20%28n_features_in_%2C%29" class="param-doc-link" style="anchor-name: --doc-link-feature_names_in_;" rel="noreferrer" target="_blank">feature_names_in_ <span class="param-doc-description" style="position-anchor: --doc-link-feature_names_in_;"> feature_names_in_: ndarray of shape (`n_features_in_`,)<br>
+<br>
+Names of features seen during :term:`fit`. Defined only when `X`<br>
+has feature names that are all strings.<br>
+<br>
+.. versionadded:: 1.0</span></a></td>
+<td class="fitted-att-type">ndarray[object](1,)</td>
+<td>['Neighborhood']</td>
+</tr>
+<tr class="default odd">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html#:~:text=n_features_in_,-int" class="param-doc-link" style="anchor-name: --doc-link-n_features_in_;" rel="noreferrer" target="_blank">n_features_in_ <span class="param-doc-description" style="position-anchor: --doc-link-n_features_in_;"> n_features_in_: int<br>
+<br>
+Number of features seen during :term:`fit`. Only defined if the<br>
+underlying transformers expose such an attribute when fit.<br>
+<br>
+.. versionadded:: 0.24</span></a></td>
+<td class="fitted-att-type">int</td>
+<td>1</td>
+</tr>
+<tr class="default even">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html#:~:text=named_transformers_,-%3Aclass%3A~sklearn.utils.Bunch" class="param-doc-link" style="anchor-name: --doc-link-named_transformers_;" rel="noreferrer" target="_blank">named_transformers_ <span class="param-doc-description" style="position-anchor: --doc-link-named_transformers_;"> named_transformers_: :class:`~sklearn.utils.Bunch`<br>
+<br>
+Read-only attribute to access any transformer by given name.<br>
+Keys are transformer names and values are the fitted transformer<br>
+objects.</span></a></td>
+<td class="fitted-att-type">Bunch</td>
+<td>{'dummify': OneHotEncoder()}</td>
+</tr>
+<tr class="default odd">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html#:~:text=output_indices_,-dict" class="param-doc-link" style="anchor-name: --doc-link-output_indices_;" rel="noreferrer" target="_blank">output_indices_ <span class="param-doc-description" style="position-anchor: --doc-link-output_indices_;"> output_indices_: dict<br>
+<br>
+A dictionary from each transformer name to a slice, where the slice<br>
+corresponds to indices in the transformed output. This is useful to<br>
+inspect which transformer is responsible for which transformed<br>
+feature(s).<br>
+<br>
+.. versionadded:: 1.0</span></a></td>
+<td class="fitted-att-type">dict</td>
+<td>{'dummify': slice(0, 28, None), 're...er': slice(0, 0, None)}</td>
+</tr>
+<tr class="default even">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html#:~:text=sparse_output_,-bool" class="param-doc-link" style="anchor-name: --doc-link-sparse_output_;" rel="noreferrer" target="_blank">sparse_output_ <span class="param-doc-description" style="position-anchor: --doc-link-sparse_output_;"> sparse_output_: bool<br>
+<br>
+Boolean flag indicating whether the output of ``transform`` is a<br>
+sparse matrix or a dense numpy array, which depends on the output<br>
+of the individual transformers and the `sparse_threshold` keyword.</span></a></td>
+<td class="fitted-att-type">bool</td>
+<td>True</td>
+</tr>
+<tr class="default odd">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.compose.ColumnTransformer.html#:~:text=transformers_,-list" class="param-doc-link" style="anchor-name: --doc-link-transformers_;" rel="noreferrer" target="_blank">transformers_ <span class="param-doc-description" style="position-anchor: --doc-link-transformers_;"> transformers_: list<br>
+<br>
+The collection of fitted transformers as tuples of (name,<br>
+fitted_transformer, column). `fitted_transformer` can be an estimator,<br>
+or `'drop'`; `'passthrough'` is replaced with an equivalent<br>
+:class:`~sklearn.preprocessing.FunctionTransformer`. In case there were<br>
+no columns selected, this will be the unfitted transformer. If there<br>
+are remaining columns, the final element is a tuple of the form:<br>
+('remainder', transformer, remaining_columns) corresponding to the<br>
+``remainder`` parameter. If there are remaining columns, then<br>
+``len(transformers_)==len(transformers)+1``, otherwise<br>
+``len(transformers_)==len(transformers)``.<br>
+<br>
+.. versionadded:: 1.7<br>
+The format of the remaining columns now attempts to match that of the other<br>
+transformers: if all columns were provided as column names (`str`), the<br>
+remaining columns are stored as column names; if all columns were provided<br>
+as mask arrays (`bool`), so are the remaining columns; in all other cases<br>
+the remaining columns are stored as indices (`int`).</span></a></td>
+<td class="fitted-att-type">list</td>
+<td>[('dummify', OneHotEncoder(), ['Ne...od'])]</td>
+</tr>
+</tbody>
+</table>
+
+            </details>
+        </div>
+    </div></div></div><div class="sk-parallel"><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label fitted sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually sk-global" id="sk-estimator-id-3" type="checkbox"><label for="sk-estimator-id-3" class="sk-toggleable__label fitted sk-toggleable__label-arrow"><div><div>dummify</div></div></label><div class="sk-toggleable__content fitted" data-param-prefix="preprocessing__dummify__"><pre>['Neighborhood']</pre></div></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator fitted sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually sk-global" id="sk-estimator-id-4" type="checkbox"><label for="sk-estimator-id-4" class="sk-toggleable__label fitted sk-toggleable__label-arrow"><div><div>OneHotEncoder</div></div><div><a class="sk-estimator-doc-link fitted" rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.preprocessing.OneHotEncoder.html">?<span>Documentation for OneHotEncoder</span></a></div></label><div class="sk-toggleable__content fitted" data-param-prefix="preprocessing__dummify__">
+        <div class="estimator-table">
+            <details>
+                <summary>Parameters</summary>
+                
+<table class="parameters-table caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="default odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.preprocessing.OneHotEncoder.html#:~:text=categories,-%27auto%27%20or%20a%20list%20of%20array-like%2C%20default%3D%27auto%27" class="param-doc-link" style="anchor-name: --doc-link-categories;" rel="noreferrer" target="_blank">categories <span class="param-doc-description" style="position-anchor: --doc-link-categories;"> categories: 'auto' or a list of array-like, default='auto'<br>
+<br>
+Categories (unique values) per feature:<br>
+<br>
+- 'auto' : Determine categories automatically from the training data.<br>
+- list : ``categories[i]`` holds the categories expected in the ith<br>
+column. The passed categories should not mix strings and numeric<br>
+values within a single feature, and should be sorted in case of<br>
+numeric values.<br>
+<br>
+The used categories can be found in the ``categories_`` attribute.<br>
+<br>
+.. versionadded:: 0.20</span></a></td>
+<td class="value">'auto'</td>
+</tr>
+<tr class="default even">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.preprocessing.OneHotEncoder.html#:~:text=drop,-%7B%27first%27%2C%20%27if_binary%27%7D%20or%20an%20array-like%20of%20shape%20%28n_features%2C%29%2C%20%20%20%20%20%20%20%20%20%20%20%20%20default%3DNone" class="param-doc-link" style="anchor-name: --doc-link-drop;" rel="noreferrer" target="_blank">drop <span class="param-doc-description" style="position-anchor: --doc-link-drop;"> drop: {'first', 'if_binary'} or an array-like of shape (n_features,), default=None<br>
+<br>
+Specifies a methodology to use to drop one of the categories per<br>
+feature. This is useful in situations where perfectly collinear<br>
+features cause problems, such as when feeding the resulting data<br>
+into an unregularized linear regression model.<br>
+<br>
+However, dropping one category breaks the symmetry of the original<br>
+representation and can therefore induce a bias in downstream models,<br>
+for instance for penalized linear classification or regression models.<br>
+<br>
+- None : retain all features (the default).<br>
+- 'first' : drop the first category in each feature. If only one<br>
+category is present, the feature will be dropped entirely.<br>
+- 'if_binary' : drop the first category in each feature with two<br>
+categories. Features with 1 or more than 2 categories are<br>
+left intact.<br>
+- array : ``drop[i]`` is the category in feature ``X[:, i]`` that<br>
+should be dropped.<br>
+<br>
+When `max_categories` or `min_frequency` is configured to group<br>
+infrequent categories, the dropping behavior is handled after the<br>
+grouping.<br>
+<br>
+.. versionadded:: 0.21<br>
+The parameter `drop` was added in 0.21.<br>
+<br>
+.. versionchanged:: 0.23<br>
+The option `drop='if_binary'` was added in 0.23.<br>
+<br>
+.. versionchanged:: 1.1<br>
+Support for dropping infrequent categories.</span></a></td>
+<td class="value">None</td>
+</tr>
+<tr class="default odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.preprocessing.OneHotEncoder.html#:~:text=sparse_output,-bool%2C%20default%3DTrue" class="param-doc-link" style="anchor-name: --doc-link-sparse_output;" rel="noreferrer" target="_blank">sparse_output <span class="param-doc-description" style="position-anchor: --doc-link-sparse_output;"> sparse_output: bool, default=True<br>
+<br>
+When ``True``, it returns a SciPy sparse matrix/array<br>
+in "Compressed Sparse Row" (CSR) format.<br>
+<br>
+.. versionadded:: 1.2<br>
+`sparse` was renamed to `sparse_output`</span></a></td>
+<td class="value">True</td>
+</tr>
+<tr class="default even">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.preprocessing.OneHotEncoder.html#:~:text=dtype,-number%20type%2C%20default%3Dnp.float64" class="param-doc-link" style="anchor-name: --doc-link-dtype;" rel="noreferrer" target="_blank">dtype <span class="param-doc-description" style="position-anchor: --doc-link-dtype;"> dtype: number type, default=np.float64<br>
+<br>
+Desired dtype of output.</span></a></td>
+<td class="value">&lt;class 'numpy.float64'&gt;</td>
+</tr>
+<tr class="default odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.preprocessing.OneHotEncoder.html#:~:text=handle_unknown,-%7B%27error%27%2C%20%27ignore%27%2C%20%27infrequent_if_exist%27%2C%20%27warn%27%7D%2C%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20default%3D%27error%27" class="param-doc-link" style="anchor-name: --doc-link-handle_unknown;" rel="noreferrer" target="_blank">handle_unknown <span class="param-doc-description" style="position-anchor: --doc-link-handle_unknown;"> handle_unknown: {'error', 'ignore', 'infrequent_if_exist', 'warn'}, default='error'<br>
+<br>
+Specifies the way unknown categories are handled during :meth:`transform`.<br>
+<br>
+- 'error' : Raise an error if an unknown category is present during transform.<br>
+- 'ignore' : When an unknown category is encountered during<br>
+transform, the resulting one-hot encoded columns for this feature<br>
+will be all zeros. In the inverse transform, an unknown category<br>
+will be denoted as None.<br>
+- 'infrequent_if_exist' : When an unknown category is encountered<br>
+during transform, the resulting one-hot encoded columns for this<br>
+feature will map to the infrequent category if it exists. The<br>
+infrequent category will be mapped to the last position in the<br>
+encoding. During inverse transform, an unknown category will be<br>
+mapped to the category denoted `'infrequent'` if it exists. If the<br>
+`'infrequent'` category does not exist, then :meth:`transform` and<br>
+:meth:`inverse_transform` will handle an unknown category as with<br>
+`handle_unknown='ignore'`. Infrequent categories exist based on<br>
+`min_frequency` and `max_categories`. Read more in the<br>
+:ref:`User Guide &lt;encoder_infrequent_categories&gt;`.<br>
+- 'warn' : When an unknown category is encountered during transform<br>
+a warning is issued, and the encoding then proceeds as described for<br>
+`handle_unknown="infrequent_if_exist"`.<br>
+<br>
+.. versionchanged:: 1.1<br>
+`'infrequent_if_exist'` was added to automatically handle unknown<br>
+categories and infrequent categories.<br>
+<br>
+.. versionadded:: 1.6<br>
+The option `"warn"` was added in 1.6.</span></a></td>
+<td class="value">'error'</td>
+</tr>
+<tr class="default even">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.preprocessing.OneHotEncoder.html#:~:text=min_frequency,-int%20or%20float%2C%20default%3DNone" class="param-doc-link" style="anchor-name: --doc-link-min_frequency;" rel="noreferrer" target="_blank">min_frequency <span class="param-doc-description" style="position-anchor: --doc-link-min_frequency;"> min_frequency: int or float, default=None<br>
+<br>
+Specifies the minimum frequency below which a category will be<br>
+considered infrequent.<br>
+<br>
+- If `int`, categories with a smaller cardinality will be considered<br>
+infrequent.<br>
+<br>
+- If `float`, categories with a smaller cardinality than<br>
+`min_frequency * n_samples` will be considered infrequent.<br>
+<br>
+.. versionadded:: 1.1<br>
+Read more in the :ref:`User Guide &lt;encoder_infrequent_categories&gt;`.</span></a></td>
+<td class="value">None</td>
+</tr>
+<tr class="default odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.preprocessing.OneHotEncoder.html#:~:text=max_categories,-int%2C%20default%3DNone" class="param-doc-link" style="anchor-name: --doc-link-max_categories;" rel="noreferrer" target="_blank">max_categories <span class="param-doc-description" style="position-anchor: --doc-link-max_categories;"> max_categories: int, default=None<br>
+<br>
+Specifies an upper limit to the number of output features for each input<br>
+feature when considering infrequent categories. If there are infrequent<br>
+categories, `max_categories` includes the category representing the<br>
+infrequent categories along with the frequent categories. If `None`,<br>
+there is no limit to the number of output features.<br>
+<br>
+.. versionadded:: 1.1<br>
+Read more in the :ref:`User Guide &lt;encoder_infrequent_categories&gt;`.</span></a></td>
+<td class="value">None</td>
+</tr>
+<tr class="default even">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.preprocessing.OneHotEncoder.html#:~:text=feature_name_combiner,-%22concat%22%20or%20callable%2C%20default%3D%22concat%22" class="param-doc-link" style="anchor-name: --doc-link-feature_name_combiner;" rel="noreferrer" target="_blank">feature_name_combiner <span class="param-doc-description" style="position-anchor: --doc-link-feature_name_combiner;"> feature_name_combiner: "concat" or callable, default="concat"<br>
+<br>
+Callable with signature `def callable(input_feature, category)` that returns a<br>
+string. This is used to create feature names to be returned by<br>
+:meth:`get_feature_names_out`.<br>
+<br>
+`"concat"` concatenates encoded feature name and category with<br>
+`feature + "_" + str(category)`.E.g. feature X with values 1, 6, 7 create<br>
+feature names `X_1, X_6, X_7`.<br>
+<br>
+.. versionadded:: 1.3</span></a></td>
+<td class="value">'concat'</td>
+</tr>
+</tbody>
+</table>
+
+            </details>
+        </div>
+    
+        <div class="estimator-table">
+            <details>
+                <summary>Fitted attributes</summary>
+                
+<table class="parameters-table caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">Type</th>
+<th data-quarto-table-cell-role="th">Value</th>
+</tr>
+<tr class="default even">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.preprocessing.OneHotEncoder.html#:~:text=categories_,-list%20of%20arrays" class="param-doc-link" style="anchor-name: --doc-link-categories_;" rel="noreferrer" target="_blank">categories_ <span class="param-doc-description" style="position-anchor: --doc-link-categories_;"> categories_: list of arrays<br>
+<br>
+The categories of each feature determined during fitting<br>
+(in order of the features in X and corresponding with the output<br>
+of ``transform``). This includes the category specified in ``drop``<br>
+(if any).</span></a></td>
+<td class="fitted-att-type">list</td>
+<td>[array(['Blmng... dtype=object)]</td>
+</tr>
+<tr class="default odd">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.preprocessing.OneHotEncoder.html#:~:text=drop_idx_,-array%20of%20shape%20%28n_features%2C%29" class="param-doc-link" style="anchor-name: --doc-link-drop_idx_;" rel="noreferrer" target="_blank">drop_idx_ <span class="param-doc-description" style="position-anchor: --doc-link-drop_idx_;"> drop_idx_: array of shape (n_features,)<br>
+<br>
+- ``drop_idx_[i]`` is the index in ``categories_[i]`` of the category<br>
+to be dropped for each feature.<br>
+- ``drop_idx_[i] = None`` if no category is to be dropped from the<br>
+feature with index ``i``, e.g. when `drop='if_binary'` and the<br>
+feature isn't binary.<br>
+- ``drop_idx_ = None`` if all the transformed features will be<br>
+retained.<br>
+<br>
+If infrequent categories are enabled by setting `min_frequency` or<br>
+`max_categories` to a non-default value and `drop_idx[i]` corresponds<br>
+to an infrequent category, then the entire infrequent category is<br>
+dropped.<br>
+<br>
+.. versionchanged:: 0.23<br>
+Added the possibility to contain `None` values.</span></a></td>
+<td class="fitted-att-type">NoneType</td>
+<td>None</td>
+</tr>
+<tr class="default even">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.preprocessing.OneHotEncoder.html#:~:text=feature_names_in_,-ndarray%20of%20shape%20%28n_features_in_%2C%29" class="param-doc-link" style="anchor-name: --doc-link-feature_names_in_;" rel="noreferrer" target="_blank">feature_names_in_ <span class="param-doc-description" style="position-anchor: --doc-link-feature_names_in_;"> feature_names_in_: ndarray of shape (`n_features_in_`,)<br>
+<br>
+Names of features seen during :term:`fit`. Defined only when `X`<br>
+has feature names that are all strings.<br>
+<br>
+.. versionadded:: 1.0</span></a></td>
+<td class="fitted-att-type">ndarray[object](1,)</td>
+<td>['Neighborhood']</td>
+</tr>
+<tr class="default odd">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.preprocessing.OneHotEncoder.html#:~:text=n_features_in_,-int" class="param-doc-link" style="anchor-name: --doc-link-n_features_in_;" rel="noreferrer" target="_blank">n_features_in_ <span class="param-doc-description" style="position-anchor: --doc-link-n_features_in_;"> n_features_in_: int<br>
+<br>
+Number of features seen during :term:`fit`.<br>
+<br>
+.. versionadded:: 1.0</span></a></td>
+<td class="fitted-att-type">int</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+
+            </details>
+        </div>
+    </div></div></div>
+        <div class="features fitted">
+          <details>
+            <summary>
+              <div class="arrow"></div>
+              <div>28 features</div>
+              <div class="image-container" title="Copy all output features">
+                <i class="copy-paste-icon" onclick="
+                  event.stopPropagation();
+                  event.preventDefault();
+                  copyFeatureNamesToClipboard(this);
+                  ">
+                </i>
+              </div>
+            </summary>
+            <div class="features-container">
+                
+<table class="features-table caption-top table table-sm table-striped small">
+<tbody>
+<tr class="odd">
+<td>Neighborhood_Blmngtn</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_Blueste</td>
+</tr>
+<tr class="odd">
+<td>Neighborhood_BrDale</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_BrkSide</td>
+</tr>
+<tr class="odd">
+<td>Neighborhood_ClearCr</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_CollgCr</td>
+</tr>
+<tr class="odd">
+<td>Neighborhood_Crawfor</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_Edwards</td>
+</tr>
+<tr class="odd">
+<td>Neighborhood_Gilbert</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_Greens</td>
+</tr>
+<tr class="odd">
+<td>Neighborhood_GrnHill</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_IDOTRR</td>
+</tr>
+<tr class="odd">
+<td>Neighborhood_Landmrk</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_MeadowV</td>
+</tr>
+<tr class="odd">
+<td>Neighborhood_Mitchel</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_NAmes</td>
+</tr>
+<tr class="odd">
+<td>Neighborhood_NPkVill</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_NWAmes</td>
+</tr>
+<tr class="odd">
+<td>Neighborhood_NoRidge</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_NridgHt</td>
+</tr>
+<tr class="odd">
+<td>Neighborhood_OldTown</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_SWISU</td>
+</tr>
+<tr class="odd">
+<td>Neighborhood_Sawyer</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_SawyerW</td>
+</tr>
+<tr class="odd">
+<td>Neighborhood_Somerst</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_StoneBr</td>
+</tr>
+<tr class="odd">
+<td>Neighborhood_Timber</td>
+</tr>
+<tr class="even">
+<td>Neighborhood_Veenker</td>
+</tr>
+</tbody>
+</table>
+
+            </div>
+          </details>
+        </div>
+    </div></div></div></div></div><div class="sk-item"><div class="sk-estimator fitted sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually sk-global" id="sk-estimator-id-5" type="checkbox"><label for="sk-estimator-id-5" class="sk-toggleable__label fitted sk-toggleable__label-arrow"><div><div>KNeighborsRegressor</div></div><div><a class="sk-estimator-doc-link fitted" rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.neighbors.KNeighborsRegressor.html">?<span>Documentation for KNeighborsRegressor</span></a></div></label><div class="sk-toggleable__content fitted" data-param-prefix="knn__">
+        <div class="estimator-table">
+            <details>
+                <summary>Parameters</summary>
+                
+<table class="parameters-table caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="user-set odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.neighbors.KNeighborsRegressor.html#:~:text=n_neighbors,-int%2C%20default%3D5" class="param-doc-link" style="anchor-name: --doc-link-n_neighbors;" rel="noreferrer" target="_blank">n_neighbors <span class="param-doc-description" style="position-anchor: --doc-link-n_neighbors;"> n_neighbors: int, default=5<br>
+<br>
+Number of neighbors to use by default for :meth:`kneighbors` queries.</span></a></td>
+<td class="value">10</td>
+</tr>
+<tr class="default even">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.neighbors.KNeighborsRegressor.html#:~:text=weights,-%7B%27uniform%27%2C%20%27distance%27%7D%2C%20callable%20or%20None%2C%20default%3D%27uniform%27" class="param-doc-link" style="anchor-name: --doc-link-weights;" rel="noreferrer" target="_blank">weights <span class="param-doc-description" style="position-anchor: --doc-link-weights;"> weights: {'uniform', 'distance'}, callable or None, default='uniform'<br>
+<br>
+Weight function used in prediction. Possible values:<br>
+<br>
+- 'uniform' : uniform weights. All points in each neighborhood<br>
+are weighted equally.<br>
+- 'distance' : weight points by the inverse of their distance.<br>
+in this case, closer neighbors of a query point will have a<br>
+greater influence than neighbors which are further away.<br>
+- [callable] : a user-defined function which accepts an<br>
+array of distances, and returns an array of the same shape<br>
+containing the weights.<br>
+<br>
+Uniform weights are used by default.<br>
+<br>
+See the following example for a demonstration of the impact of<br>
+different weighting schemes on predictions:<br>
+:ref:`sphx_glr_auto_examples_neighbors_plot_regression.py`.</span></a></td>
+<td class="value">'uniform'</td>
+</tr>
+<tr class="default odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.neighbors.KNeighborsRegressor.html#:~:text=algorithm,-%7B%27auto%27%2C%20%27ball_tree%27%2C%20%27kd_tree%27%2C%20%27brute%27%7D%2C%20default%3D%27auto%27" class="param-doc-link" style="anchor-name: --doc-link-algorithm;" rel="noreferrer" target="_blank">algorithm <span class="param-doc-description" style="position-anchor: --doc-link-algorithm;"> algorithm: {'auto', 'ball_tree', 'kd_tree', 'brute'}, default='auto'<br>
+<br>
+Algorithm used to compute the nearest neighbors:<br>
+<br>
+- 'ball_tree' will use :class:`BallTree`<br>
+- 'kd_tree' will use :class:`KDTree`<br>
+- 'brute' will use a brute-force search.<br>
+- 'auto' will attempt to decide the most appropriate algorithm<br>
+based on the values passed to :meth:`fit` method.<br>
+<br>
+Note: fitting on sparse input will override the setting of<br>
+this parameter, using brute force.</span></a></td>
+<td class="value">'auto'</td>
+</tr>
+<tr class="default even">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.neighbors.KNeighborsRegressor.html#:~:text=leaf_size,-int%2C%20default%3D30" class="param-doc-link" style="anchor-name: --doc-link-leaf_size;" rel="noreferrer" target="_blank">leaf_size <span class="param-doc-description" style="position-anchor: --doc-link-leaf_size;"> leaf_size: int, default=30<br>
+<br>
+Leaf size passed to BallTree or KDTree. This can affect the<br>
+speed of the construction and query, as well as the memory<br>
+required to store the tree. The optimal value depends on the<br>
+nature of the problem.</span></a></td>
+<td class="value">30</td>
+</tr>
+<tr class="default odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.neighbors.KNeighborsRegressor.html#:~:text=p,-float%2C%20default%3D2" class="param-doc-link" style="anchor-name: --doc-link-p;" rel="noreferrer" target="_blank">p <span class="param-doc-description" style="position-anchor: --doc-link-p;"> p: float, default=2<br>
+<br>
+Power parameter for the Minkowski metric. When p = 1, this is<br>
+equivalent to using manhattan_distance (l1), and euclidean_distance<br>
+(l2) for p = 2. For arbitrary p, minkowski_distance (l_p) is used.</span></a></td>
+<td class="value">2</td>
+</tr>
+<tr class="default even">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.neighbors.KNeighborsRegressor.html#:~:text=metric,-str%2C%20DistanceMetric%20object%20or%20callable%2C%20default%3D%27minkowski%27" class="param-doc-link" style="anchor-name: --doc-link-metric;" rel="noreferrer" target="_blank">metric <span class="param-doc-description" style="position-anchor: --doc-link-metric;"> metric: str, DistanceMetric object or callable, default='minkowski'<br>
+<br>
+Metric to use for distance computation. Default is "minkowski", which<br>
+results in the standard Euclidean distance when p = 2. See the<br>
+documentation of `scipy.spatial.distance<br>
+&lt;https://docs.scipy.org/doc/scipy/reference/spatial.distance.html&gt;`_ and<br>
+the metrics listed in<br>
+:class:`~sklearn.metrics.pairwise.distance_metrics` for valid metric<br>
+values.<br>
+<br>
+If metric is "precomputed", X is assumed to be a distance matrix and<br>
+must be square during fit. X may be a :term:`sparse graph`, in which<br>
+case only "nonzero" elements may be considered neighbors.<br>
+<br>
+If metric is a callable function, it takes two arrays representing 1D<br>
+vectors as inputs and must return one value indicating the distance<br>
+between those vectors. This works for Scipy's metrics, but is less<br>
+efficient than passing the metric name as a string.<br>
+<br>
+If metric is a DistanceMetric object, it will be passed directly to<br>
+the underlying computation routines.</span></a></td>
+<td class="value">'minkowski'</td>
+</tr>
+<tr class="default odd">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.neighbors.KNeighborsRegressor.html#:~:text=metric_params,-dict%2C%20default%3DNone" class="param-doc-link" style="anchor-name: --doc-link-metric_params;" rel="noreferrer" target="_blank">metric_params <span class="param-doc-description" style="position-anchor: --doc-link-metric_params;"> metric_params: dict, default=None<br>
+<br>
+Additional keyword arguments for the metric function.</span></a></td>
+<td class="value">None</td>
+</tr>
+<tr class="default even">
+<td><em></em></td>
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.neighbors.KNeighborsRegressor.html#:~:text=n_jobs,-int%2C%20default%3DNone" class="param-doc-link" style="anchor-name: --doc-link-n_jobs;" rel="noreferrer" target="_blank">n_jobs <span class="param-doc-description" style="position-anchor: --doc-link-n_jobs;"> n_jobs: int, default=None<br>
+<br>
+The number of parallel jobs to run for neighbors search.<br>
+``None`` means 1 unless in a :obj:`joblib.parallel_backend` context.<br>
+``-1`` means using all processors. See :term:`Glossary &lt;n_jobs&gt;`<br>
+for more details.<br>
+Doesn't affect :meth:`fit` method.</span></a></td>
+<td class="value">None</td>
+</tr>
+</tbody>
+</table>
+
+            </details>
+        </div>
+    
+        <div class="estimator-table">
+            <details>
+                <summary>Fitted attributes</summary>
+                
+<table class="parameters-table caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">Type</th>
+<th data-quarto-table-cell-role="th">Value</th>
+</tr>
+<tr class="default even">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.neighbors.KNeighborsRegressor.html#:~:text=effective_metric_,-str%20or%20callable" class="param-doc-link" style="anchor-name: --doc-link-effective_metric_;" rel="noreferrer" target="_blank">effective_metric_ <span class="param-doc-description" style="position-anchor: --doc-link-effective_metric_;"> effective_metric_: str or callable<br>
+<br>
+The distance metric to use. It will be same as the `metric` parameter<br>
+or a synonym of it, e.g. 'euclidean' if the `metric` parameter set to<br>
+'minkowski' and `p` parameter set to 2.</span></a></td>
+<td class="fitted-att-type">str</td>
+<td>'eu...an'</td>
+</tr>
+<tr class="default odd">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.neighbors.KNeighborsRegressor.html#:~:text=effective_metric_params_,-dict" class="param-doc-link" style="anchor-name: --doc-link-effective_metric_params_;" rel="noreferrer" target="_blank">effective_metric_params_ <span class="param-doc-description" style="position-anchor: --doc-link-effective_metric_params_;"> effective_metric_params_: dict<br>
+<br>
+Additional keyword arguments for the metric function. For most metrics<br>
+will be same with `metric_params` parameter, but may also contain the<br>
+`p` parameter value if the `effective_metric_` attribute is set to<br>
+'minkowski'.</span></a></td>
+<td class="fitted-att-type">dict</td>
+<td>{}</td>
+</tr>
+<tr class="default even">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.neighbors.KNeighborsRegressor.html#:~:text=n_features_in_,-int" class="param-doc-link" style="anchor-name: --doc-link-n_features_in_;" rel="noreferrer" target="_blank">n_features_in_ <span class="param-doc-description" style="position-anchor: --doc-link-n_features_in_;"> n_features_in_: int<br>
+<br>
+Number of features seen during :term:`fit`.<br>
+<br>
+.. versionadded:: 0.24</span></a></td>
+<td class="fitted-att-type">int</td>
+<td>28</td>
+</tr>
+<tr class="default odd">
+<td class="param"><a href="https://scikit-learn.org/1.9/modules/generated/sklearn.neighbors.KNeighborsRegressor.html#:~:text=n_samples_fit_,-int" class="param-doc-link" style="anchor-name: --doc-link-n_samples_fit_;" rel="noreferrer" target="_blank">n_samples_fit_ <span class="param-doc-description" style="position-anchor: --doc-link-n_samples_fit_;"> n_samples_fit_: int<br>
+<br>
+Number of samples in the fitted data.</span></a></td>
+<td class="fitted-att-type">int</td>
+<td>2930</td>
+</tr>
+</tbody>
+</table>
+
+            </details>
+        </div>
+    </div></div></div></div></div></div></div><script>/*  Authors: The scikit-learn developers
+ SPDX-License-Identifier: BSD-3-Clause
+*/
+
+function copyToClipboard(text, element) {
+    // Get the parameter prefix from the closest toggleable content
+    const toggleableContent = element.closest('.sk-toggleable__content');
+    const paramPrefix = toggleableContent ? toggleableContent.dataset.paramPrefix : '';
+    const fullParamName = paramPrefix ? `${paramPrefix}${text}` : text;
+
+    const originalStyle = element.style;
+    const computedStyle = window.getComputedStyle(element);
+    const originalWidth = computedStyle.width;
+    const originalHTML = element.innerHTML.replace('Copied!', '');
+
+    navigator.clipboard.writeText(fullParamName)
+        .then(() => {
+            element.style.width = originalWidth;
+            element.style.color = 'green';
+            element.innerHTML = "Copied!";
+
+            setTimeout(() => {
+                element.innerHTML = originalHTML;
+                element.style = originalStyle;
+            }, 2000);
+        })
+        .catch(err => {
+            console.error('Failed to copy:', err);
+            element.style.color = 'red';
+            element.innerHTML = "Failed!";
+            setTimeout(() => {
+                element.innerHTML = originalHTML;
+                element.style = originalStyle;
+            }, 2000);
+        });
+    return false;
+}
+
+document.querySelectorAll('.copy-paste-icon').forEach(function(element) {
+    const toggleableContent = element.closest('.sk-toggleable__content');
+    const paramPrefix = toggleableContent ? toggleableContent.dataset.paramPrefix : '';
+
+    const parent = element.parentElement;
+    if (!parent || !parent.nextElementSibling) {
+        console.warn('Expected copy-paste icon is missing from the DOM structure');
+        return;
+    }
+
+    const paramName = element.parentElement.nextElementSibling
+        .textContent.trim().split(' ')[0];
+    const fullParamName = paramPrefix ? `${paramPrefix}${paramName}` : paramName;
+
+    element.setAttribute('title', fullParamName);
+});
+
+/**
+ * Copy the list of feature names formatted as a Python list.
+ *
+ * @param {HTMLElement} element - The copy button inside a `.features` block; its siblings
+ *   contain a `details` element and a table containing feature named.
+ * @returns {boolean} Always returns `false` so callers can prevent the default click behavior.
+ */
+function copyFeatureNamesToClipboard(element) {
+    var detailsElem = element.closest('.features').querySelector('details');
+    var wasOpen = detailsElem.open;
+    detailsElem.open = true;
+    var content = element.closest('.features').querySelector('tbody')
+                  .innerText.trim();
+    if (!wasOpen) detailsElem.open = false;
+    const rows = content.split('\n').map(row => `    "${row}"`);
+    const formattedText = `[\n${rows.join(',\n')},\n]`;
+    const originalHTML = element.innerHTML.replace('✔', '');
+    const originalStyle = element.style;
+    const copyMark = document.createElement('span');
+    copyMark.innerHTML = '✔';
+    copyMark.style.color = 'blue';
+    copyMark.style.fontSize = '1em';
+
+    navigator.clipboard.writeText(formattedText)
+        .then(() => {
+            element.style.display = 'none';
+            element.parentElement.appendChild(copyMark);
+
+            setTimeout(() => {
+                copyMark.remove();
+                element.innerHTML = originalHTML;
+                element.style = originalStyle;
+            }, 1000);
+        })
+        .catch(err => {
+            console.error('Failed to copy:', err);
+            element.style.color = 'orange';
+            element.innerHTML = "Failed!";
+            setTimeout(() => {
+                element.innerHTML = originalHTML;
+                element.style = originalStyle;
+            }, 1000);
+        });
+    return false;
+}
+/**
+ * Adapted from Skrub
+ * https://github.com/skrub-data/skrub/blob/403466d1d5d4dc76a7ef569b3f8228db59a31dc3/skrub/_reporting/_data/templates/report.js#L789
+ * @returns "light" or "dark"
+ */
+function detectTheme(element) {
+    const body = document.querySelector('body');
+
+    // Check VSCode theme
+    const themeKindAttr = body.getAttribute('data-vscode-theme-kind');
+    const themeNameAttr = body.getAttribute('data-vscode-theme-name');
+
+    if (themeKindAttr && themeNameAttr) {
+        const themeKind = themeKindAttr.toLowerCase();
+        const themeName = themeNameAttr.toLowerCase();
+
+        if (themeKind.includes("dark") || themeName.includes("dark")) {
+            return "dark";
+        }
+        if (themeKind.includes("light") || themeName.includes("light")) {
+            return "light";
+        }
+    }
+
+    // Check Jupyter theme
+    if (body.getAttribute('data-jp-theme-light') === 'false') {
+        return 'dark';
+    } else if (body.getAttribute('data-jp-theme-light') === 'true') {
+        return 'light';
+    }
+
+    // Guess based on a parent element's color
+    const color = window.getComputedStyle(element.parentNode, null).getPropertyValue('color');
+    const match = color.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*$/i);
+    if (match) {
+        const [r, g, b] = [
+            parseFloat(match[1]),
+            parseFloat(match[2]),
+            parseFloat(match[3])
+        ];
+
+        // https://en.wikipedia.org/wiki/HSL_and_HSV#Lightness
+        const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+
+        if (luma > 180) {
+            // If the text is very bright we have a dark theme
+            return 'dark';
+        }
+        if (luma < 75) {
+            // If the text is very dark we have a light theme
+            return 'light';
+        }
+        // Otherwise fall back to the next heuristic.
+    }
+
+    // Fallback to system preference
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+
+function forceTheme(elementId) {
+    const estimatorElement = document.querySelector(`#${elementId}`);
+    if (estimatorElement === null) {
+        console.error(`Element with id ${elementId} not found.`);
+    } else {
+        const theme = detectTheme(estimatorElement);
+        estimatorElement.classList.add(theme);
+    }
+}
+
+forceTheme('sk-container-id-1');</script>
+</div>
+</div>
+<p>Now we’ll find the predicted price for each Neighborhood.</p>
+<div id="cell-24" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;colab&quot;,&quot;value&quot;:{&quot;base_uri&quot;:&quot;https://localhost:8080/&quot;,&quot;height&quot;:926}}" data-outputid="7df1826d-b96f-411f-a8ae-1db3ac863bf3" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>neighborhoods <span class="op">=</span> pd.Series(df_ames[<span class="st">"Neighborhood"</span>].unique(), name<span class="op">=</span><span class="st">"Neighborhood"</span>).to_frame()</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>neighborhoods[<span class="st">"predicted"</span>] <span class="op">=</span> knn_model.predict(neighborhoods)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>neighborhoods</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="9">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Neighborhood</th>
+<th data-quarto-table-cell-role="th">predicted</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>NAmes</td>
+<td>142771.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>Gilbert</td>
+<td>221722.5</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>StoneBr</td>
+<td>300637.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">3</th>
+<td>NWAmes</td>
+<td>180795.0</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">4</th>
+<td>Somerst</td>
+<td>230960.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">5</th>
+<td>BrDale</td>
+<td>108850.0</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">6</th>
+<td>NPkVill</td>
+<td>140115.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">7</th>
+<td>NridgHt</td>
+<td>346588.3</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">8</th>
+<td>Blmngtn</td>
+<td>209917.9</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">9</th>
+<td>NoRidge</td>
+<td>325105.0</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">10</th>
+<td>SawyerW</td>
+<td>169140.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">11</th>
+<td>Sawyer</td>
+<td>141880.0</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">12</th>
+<td>Greens</td>
+<td>181175.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">13</th>
+<td>BrkSide</td>
+<td>118810.0</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">14</th>
+<td>OldTown</td>
+<td>121880.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">15</th>
+<td>IDOTRR</td>
+<td>121150.4</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">16</th>
+<td>ClearCr</td>
+<td>222100.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">17</th>
+<td>SWISU</td>
+<td>134050.0</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">18</th>
+<td>Edwards</td>
+<td>130960.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">19</th>
+<td>CollgCr</td>
+<td>165843.2</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">20</th>
+<td>Crawfor</td>
+<td>245010.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">21</th>
+<td>Blueste</td>
+<td>143590.0</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">22</th>
+<td>Mitchel</td>
+<td>141000.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">23</th>
+<td>Timber</td>
+<td>228758.9</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">24</th>
+<td>MeadowV</td>
+<td>104390.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">25</th>
+<td>Veenker</td>
+<td>254750.0</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">26</th>
+<td>GrnHill</td>
+<td>150790.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">27</th>
+<td>Landmrk</td>
+<td>122920.0</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>Let’s compare the predicted prices to the mean price for each neighborhood.</p>
+<div id="cell-26" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;colab&quot;,&quot;value&quot;:{&quot;base_uri&quot;:&quot;https://localhost:8080/&quot;,&quot;height&quot;:926}}" data-outputid="27e502b8-1d39-4e2e-d8f1-8c4cc4f8d404" data-execution_count="10">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>pd.merge(pd.merge(neighborhoods,</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>                  df_ames.groupby(<span class="st">"Neighborhood"</span>)[<span class="st">"SalePrice"</span>].mean(), left_on <span class="op">=</span> <span class="st">"Neighborhood"</span>, right_index <span class="op">=</span> <span class="va">True</span>),</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>         df_ames[<span class="st">"Neighborhood"</span>].value_counts(), left_on <span class="op">=</span> <span class="st">"Neighborhood"</span>, right_index <span class="op">=</span> <span class="va">True</span>).sort_values(<span class="st">"count"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="10">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Neighborhood</th>
+<th data-quarto-table-cell-role="th">predicted</th>
+<th data-quarto-table-cell-role="th">SalePrice</th>
+<th data-quarto-table-cell-role="th">count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">27</th>
+<td>Landmrk</td>
+<td>122920.0</td>
+<td>137000.000000</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">26</th>
+<td>GrnHill</td>
+<td>150790.0</td>
+<td>280000.000000</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">12</th>
+<td>Greens</td>
+<td>181175.0</td>
+<td>193531.250000</td>
+<td>8</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">21</th>
+<td>Blueste</td>
+<td>143590.0</td>
+<td>143590.000000</td>
+<td>10</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">6</th>
+<td>NPkVill</td>
+<td>140115.0</td>
+<td>140710.869565</td>
+<td>23</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">25</th>
+<td>Veenker</td>
+<td>254750.0</td>
+<td>248314.583333</td>
+<td>24</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">8</th>
+<td>Blmngtn</td>
+<td>209917.9</td>
+<td>196661.678571</td>
+<td>28</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">5</th>
+<td>BrDale</td>
+<td>108850.0</td>
+<td>105608.333333</td>
+<td>30</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">24</th>
+<td>MeadowV</td>
+<td>104390.0</td>
+<td>95756.486486</td>
+<td>37</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">16</th>
+<td>ClearCr</td>
+<td>222100.0</td>
+<td>208662.090909</td>
+<td>44</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">17</th>
+<td>SWISU</td>
+<td>134050.0</td>
+<td>135071.937500</td>
+<td>48</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">2</th>
+<td>StoneBr</td>
+<td>300637.0</td>
+<td>324229.196078</td>
+<td>51</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">9</th>
+<td>NoRidge</td>
+<td>325105.0</td>
+<td>330319.126761</td>
+<td>71</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">23</th>
+<td>Timber</td>
+<td>228758.9</td>
+<td>246599.541667</td>
+<td>72</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">15</th>
+<td>IDOTRR</td>
+<td>121150.4</td>
+<td>103752.903226</td>
+<td>93</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">20</th>
+<td>Crawfor</td>
+<td>245010.0</td>
+<td>207550.834951</td>
+<td>103</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">13</th>
+<td>BrkSide</td>
+<td>118810.0</td>
+<td>124756.250000</td>
+<td>108</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">22</th>
+<td>Mitchel</td>
+<td>141000.0</td>
+<td>162226.631579</td>
+<td>114</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">10</th>
+<td>SawyerW</td>
+<td>169140.0</td>
+<td>184070.184000</td>
+<td>125</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">3</th>
+<td>NWAmes</td>
+<td>180795.0</td>
+<td>188406.908397</td>
+<td>131</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">11</th>
+<td>Sawyer</td>
+<td>141880.0</td>
+<td>136751.152318</td>
+<td>151</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>Gilbert</td>
+<td>221722.5</td>
+<td>190646.575758</td>
+<td>165</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">7</th>
+<td>NridgHt</td>
+<td>346588.3</td>
+<td>322018.265060</td>
+<td>166</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">4</th>
+<td>Somerst</td>
+<td>230960.0</td>
+<td>229707.324176</td>
+<td>182</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">18</th>
+<td>Edwards</td>
+<td>130960.0</td>
+<td>130843.381443</td>
+<td>194</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">14</th>
+<td>OldTown</td>
+<td>121880.0</td>
+<td>123991.891213</td>
+<td>239</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">19</th>
+<td>CollgCr</td>
+<td>165843.2</td>
+<td>201803.434457</td>
+<td>267</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">0</th>
+<td>NAmes</td>
+<td>142771.0</td>
+<td>145097.349887</td>
+<td>443</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<ol start="5" type="1">
+<li>For what neighborhood is the predicted price equal to the neighborhood’s mean price? Why? What is special about that neighborhood? Can you explain why the predicted prices don’t match the mean price for the other neighborhoods?</li>
+</ol>
+<p><strong>Discuss with your partner.</strong></p>
+</section>
+<section id="k-nearest-neighbors-regression-functions-for-two-quantitative-features-sketching-for-small-training-data" class="level3">
+<h3 class="anchored" data-anchor-id="k-nearest-neighbors-regression-functions-for-two-quantitative-features-sketching-for-small-training-data">K-Nearest Neighbors Regression Functions for Two Quantitative Features: Sketching for Small Training Data</h3>
+<p>When there are multiple features, a regression function will be a surface in a higher dimensional space and is therefore difficult to visualize. Essentially the regression function splits the feature space into regions based on which <span class="math inline">\(K\)</span> points in the training data are closest, and makes constant predictions over these regions so that the regression surface has something like a <a href="https://i.pinimg.com/originals/f3/61/21/f36121c84fa42b6cad525f865d61d049.png">“log step”</a> shape.</p>
+<p>We’ll sketch plots of the regression surface when there are two quantitative features and the training data only contains a few observations. Assume that the features have already been scaled and that Euclidean distance is used to determine nearest neighbors.</p>
+<ol start="6" type="1">
+<li>Consider <strong>1-nearest neighbors</strong> regression model based on two quantitative features which have already been scaled. Imagine the training data set only contains 2 observations. Skecth a plot of the regression function. <strong>Discuss with your partner.</strong></li>
+</ol>
+<p><strong>Sketch on paper and discuss with your partner.</strong></p>
+<ol start="7" type="1">
+<li>Consider <strong>1-nearest neighbors</strong> regression model based on two quantitative features which have already been scaled. Imagine the training data set only contains 3 observations. Skecth a plot of the regression function. <strong>Discuss with your partner.</strong></li>
+</ol>
+<p><strong>Sketch on paper and discuss with your partner.</strong></p>
+<ol start="8" type="1">
+<li>Consider <strong>2-nearest neighbors</strong> regression model based on two quantitative features which have already been scaled. Imagine the training data set only contains 3 observations. Skecth a plot of the regression function. <strong>Discuss with your partner.</strong></li>
+</ol>
+<p><strong>Sketch on paper and discuss with your partner.</strong></p>
+</section>
+</section>
+<section id="decision-trees" class="level2">
+<h2 class="anchored" data-anchor-id="decision-trees">Decision Trees</h2>
+<p>Back to the wine data. Suppose again that we want to predict log(price) based on just a single feature, age.</p>
+<div id="cell-38" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;colab&quot;,&quot;value&quot;:{&quot;base_uri&quot;:&quot;https://localhost:8080/&quot;,&quot;height&quot;:466}}" data-outputid="f1af1c6a-73ba-4526-f356-2a05c935c4c1" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>bordeaux_train.plot.scatter(x<span class="op">=</span><span class="st">"age"</span>, y<span class="op">=</span><span class="st">"log(price)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/figure-html/cell-12-output-1.png" width="567" height="432" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<ol start="9" type="1">
+<li>Suppose we use a regression decision tree with a single split at 20.5. Sketch a plot of what the regression function would look like.</li>
+</ol>
+<p><strong>Sketch on paper and discuss with your partner.</strong></p>
+<ol start="10" type="1">
+<li>Suppose we use a decision tree with two splits at 20.5 and 30.5. Sketch a plot of what the regression function would look like.</li>
+</ol>
+<p><strong>Sketch on paper and discuss with your partner.</strong></p>
+</section>
+<section id="fitting-knn-regression-models-with-scikit-learn-housing-data" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-knn-regression-models-with-scikit-learn-housing-data">Fitting KNN Regression Models with scikit-learn: Housing data</h2>
+<ol start="11" type="1">
+<li>Fit a 10-nearest neighbors regression model that predicts the price (just <strong>SalePrice</strong>, not log) of a home using square footage (<strong>Gr Liv Area</strong>), number of bedrooms (<strong>Bedroom AbvGr</strong>), number of full bathrooms (<strong>Full Bath</strong>), number of half bathrooms (<strong>Half Bath</strong>), and <strong>Neighborhood</strong>. Use a pipeline and column transformers as needed. Make a scatter plot of predicting price versus actual price.</li>
+</ol>
+<div id="cell-45" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;colab&quot;,&quot;value&quot;:{&quot;base_uri&quot;:&quot;https://localhost:8080/&quot;,&quot;height&quot;:466}}" data-outputid="e71db350-e21f-4e7f-cb19-d8c97411e58c" data-execution_count="12">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>df_ames <span class="op">=</span> pd.read_csv(<span class="st">"http://dlsun.github.io/pods/data/AmesHousing.txt"</span>, sep <span class="op">=</span> <span class="st">"</span><span class="ch">\t</span><span class="st">"</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>df_ames.head()</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.compose <span class="im">import</span> ColumnTransformer</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.neighbors <span class="im">import</span> KNeighborsRegressor</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.pipeline <span class="im">import</span> Pipeline</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> OneHotEncoder</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> df_ames[[<span class="st">"Gr Liv Area"</span>, <span class="st">"Bedroom AbvGr"</span>, <span class="st">"Full Bath"</span>, <span class="st">"Half Bath"</span>, <span class="st">"Neighborhood"</span>]]</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df_ames[<span class="st">"SalePrice"</span>]</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>ct <span class="op">=</span> ColumnTransformer(</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    [(<span class="st">"dummify"</span>, OneHotEncoder(), [<span class="st">"Neighborhood"</span>])]</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>knn_model <span class="op">=</span> Pipeline([</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"preprocessing"</span>, ct),</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"knn"</span>, KNeighborsRegressor(n_neighbors<span class="op">=</span><span class="dv">10</span>))</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>knn_model.fit(X, y)</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>df_ames[<span class="st">"predicted"</span>] <span class="op">=</span> knn_model.predict(X)</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>df_ames.plot.scatter(x<span class="op">=</span><span class="st">"SalePrice"</span>, y<span class="op">=</span><span class="st">"predicted"</span>)</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/figure-html/cell-13-output-1.png" width="599" height="432" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<ol start="12" type="1">
+<li>Repeat the previous part to fit a <span class="math inline">\(k\)</span>-nearest neighbors model for some other value of <span class="math inline">\(k\)</span>. Experiment with different values of <span class="math inline">\(k\)</span>. (For this, you can just pick and choose a few, no need to automate it. We’ll see how to do that later.) What value of <span class="math inline">\(k\)</span> seems to be “best”? How are you deciding?</li>
+</ol>
+<div id="cell-47" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;colab&quot;,&quot;value&quot;:{&quot;base_uri&quot;:&quot;https://localhost:8080/&quot;,&quot;height&quot;:466}}" data-outputid="7ea5078e-8554-403c-e7c5-81c0c943873f" data-execution_count="13">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>df_ames <span class="op">=</span> pd.read_csv(<span class="st">"http://dlsun.github.io/pods/data/AmesHousing.txt"</span>, sep <span class="op">=</span> <span class="st">"</span><span class="ch">\t</span><span class="st">"</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.compose <span class="im">import</span> ColumnTransformer</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.neighbors <span class="im">import</span> KNeighborsRegressor</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.pipeline <span class="im">import</span> Pipeline</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> OneHotEncoder</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> df_ames[[<span class="st">"Gr Liv Area"</span>, <span class="st">"Bedroom AbvGr"</span>, <span class="st">"Full Bath"</span>, <span class="st">"Half Bath"</span>, <span class="st">"Neighborhood"</span>]]</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df_ames[<span class="st">"SalePrice"</span>]</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Adding remainder="passthrough" keeps the other quantitative features in the model</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>ct <span class="op">=</span> ColumnTransformer(</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    [(<span class="st">"dummify"</span>, OneHotEncoder(), [<span class="st">"Neighborhood"</span>])],</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    remainder<span class="op">=</span><span class="st">"passthrough"</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Try changing n_neighbors here now (e.g., to 10, 50, or 100)</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>knn_model <span class="op">=</span> Pipeline([</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"preprocessing"</span>, ct),</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"knn"</span>, KNeighborsRegressor(n_neighbors<span class="op">=</span><span class="dv">100</span>))</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>knn_model.fit(X, y)</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>df_ames[<span class="st">"predicted"</span>] <span class="op">=</span> knn_model.predict(X)</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>df_ames.plot.scatter(x<span class="op">=</span><span class="st">"SalePrice"</span>, y<span class="op">=</span><span class="st">"predicted"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/figure-html/cell-14-output-1.png" width="599" height="432" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<ol start="13" type="1">
+<li>Fit a regression decison tree that predicts the price (just <strong>SalePrice</strong>, not log) of a home using square footage (<strong>Gr Liv Area</strong>), number of bedrooms (<strong>Bedroom AbvGr</strong>), number of full bathrooms (<strong>Full Bath</strong>), number of half bathrooms (<strong>Half Bath</strong>), and <strong>Neighborhood</strong>. Use a max depth of 4. Use a pipeline and column transformers as needed. Plot and interpret the tree. Also, make a scatter plot of predicting price versus actual price.</li>
+</ol>
+<div id="cell-49" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;colab&quot;,&quot;value&quot;:{&quot;base_uri&quot;:&quot;https://localhost:8080/&quot;,&quot;height&quot;:1000}}" data-outputid="4667dbf7-4489-434e-ea3d-befd3bc40ca4" data-execution_count="14">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.tree <span class="im">import</span> DecisionTreeRegressor</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.compose <span class="im">import</span> ColumnTransformer</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.pipeline <span class="im">import</span> Pipeline</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> OneHotEncoder</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.tree <span class="im">import</span> plot_tree</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> df_ames[[<span class="st">"Gr Liv Area"</span>, <span class="st">"Bedroom AbvGr"</span>, <span class="st">"Full Bath"</span>, <span class="st">"Half Bath"</span>, <span class="st">"Neighborhood"</span>]]</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df_ames[<span class="st">"SalePrice"</span>]</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Preprocess categorical features</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>ct <span class="op">=</span> ColumnTransformer(</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    [(<span class="st">"dummify"</span>, OneHotEncoder(), [<span class="st">"Neighborhood"</span>])],</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    remainder<span class="op">=</span><span class="st">"passthrough"</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the pipeline with a DecisionTreeRegressor using max_depth=4</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>dtree_model <span class="op">=</span> Pipeline([</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"preprocessing"</span>, ct),</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"dtree"</span>, DecisionTreeRegressor(max_depth<span class="op">=</span><span class="dv">4</span>))</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the model</span></span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>dtree_model.fit(X, y)</span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Predict and plot</span></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>df_ames[<span class="st">"predicted"</span>] <span class="op">=</span> dtree_model.predict(X)</span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>df_ames.plot.scatter(x<span class="op">=</span><span class="st">"SalePrice"</span>, y<span class="op">=</span><span class="st">"predicted"</span>, title<span class="op">=</span><span class="st">"Decision Tree (max_depth=4)"</span>)</span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the tree itself</span></span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">20</span>,<span class="dv">10</span>))</span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>plot_tree(dtree_model.named_steps[<span class="st">"dtree"</span>], max_depth<span class="op">=</span><span class="dv">2</span>, feature_names<span class="op">=</span>dtree_model.named_steps[<span class="st">"preprocessing"</span>].get_feature_names_out(), filled<span class="op">=</span><span class="va">True</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/figure-html/cell-15-output-1.png" width="599" height="453" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/figure-html/cell-15-output-2.png" width="1570" height="790" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<ol start="14" type="1">
+<li>Repeat the previous part with different values of <code>max_depth</code>. What value of seems to be “best”? How are you deciding?</li>
+</ol>
+<div id="cell-51" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;colab&quot;,&quot;value&quot;:{&quot;base_uri&quot;:&quot;https://localhost:8080/&quot;,&quot;height&quot;:472}}" data-outputid="510a1727-8060-4a53-a4bb-8a9913b53602" data-execution_count="15">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.tree <span class="im">import</span> DecisionTreeRegressor</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.compose <span class="im">import</span> ColumnTransformer</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.pipeline <span class="im">import</span> Pipeline</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> OneHotEncoder</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> df_ames[[<span class="st">"Gr Liv Area"</span>, <span class="st">"Bedroom AbvGr"</span>, <span class="st">"Full Bath"</span>, <span class="st">"Half Bath"</span>, <span class="st">"Neighborhood"</span>]]</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df_ames[<span class="st">"SalePrice"</span>]</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Preprocess categorical features</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>ct <span class="op">=</span> ColumnTransformer(</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    [(<span class="st">"dummify"</span>, OneHotEncoder(), [<span class="st">"Neighborhood"</span>])],</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    remainder<span class="op">=</span><span class="st">"passthrough"</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the pipeline with a DecisionTreeRegressor using max_depth=10</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>dtree_model <span class="op">=</span> Pipeline([</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"preprocessing"</span>, ct),</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"dtree"</span>, DecisionTreeRegressor(max_depth<span class="op">=</span><span class="dv">10</span>))</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the model</span></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>dtree_model.fit(X, y)</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Predict and plot</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>df_ames[<span class="st">"predicted"</span>] <span class="op">=</span> dtree_model.predict(X)</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>df_ames.plot.scatter(x<span class="op">=</span><span class="st">"SalePrice"</span>, y<span class="op">=</span><span class="st">"predicted"</span>, title<span class="op">=</span><span class="st">"Decision Tree (max_depth=10)"</span>)</span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Copy_of_GSB_5544_PA_9_1_K_Nearest_Neighbors_for_Regression_files/figure-html/cell-16-output-1.png" width="599" height="453" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>I think that a higher max depth is better because the graph becomes more linear and slightly easier to understand.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
